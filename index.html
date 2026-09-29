@@ -411,7 +411,7 @@ legend{font-family:var(--f-display);font-weight:600;padding:0}
     <div class="wrap hud-in">
       <div class="brand">Neuro Lockdown<small id="hud-team">Team</small></div>
       <div class="timer" id="timer" aria-live="off" title="Time left">30:00</div>
-      <div class="code" aria-label="Override code letters collected"><span class="eyebrow lbl">Code</span><span id="slots" class="code"></span></div>
+      <div class="code" id="codewrap" aria-label="Override code letters collected"><span class="eyebrow lbl">Code</span><span id="slots" class="code"></span></div>
       <div class="hud-actions">
         <button class="btn small ghost" data-act="map" id="btn-map">Brain map</button>
         <button class="btn small ghost" data-act="journal">Field journal</button>
@@ -432,6 +432,13 @@ legend{font-family:var(--f-display);font-weight:600;padding:0}
           <div class="field">
             <label for="team">Team name</label>
             <input type="text" id="team" maxlength="28" placeholder="The Neuron Ninjas">
+          </div>
+          <div class="field">
+            <span class="eyebrow" id="mode-lbl">How are you playing?</span>
+            <div class="seg" role="radiogroup" aria-labelledby="mode-lbl" style="margin-top:6px">
+              <input type="radio" name="mode" id="md-t" value="terminal" checked><label for="md-t">Classroom: Brain Terminal + printed kit</label>
+              <input type="radio" name="mode" id="md-d" value="digital"><label for="md-d">All-digital (practice / backup)</label>
+            </div>
           </div>
           <div class="field">
             <span class="eyebrow" id="clock-lbl">Clock</span>
@@ -516,6 +523,7 @@ legend{font-family:var(--f-display);font-weight:600;padding:0}
           <span><i style="background:var(--ok)"></i>Cleared</span>
           <span><i style="background:var(--muted)"></i>Sealed</span>
           <span><i style="background:var(--heat)"></i>Exit</span>
+          <span id="lg-paper"><i style="background:transparent;border:2px solid var(--heat)"></i>Paper station in the room</span>
         </div>
       </section>
       <aside class="log">
@@ -578,7 +586,7 @@ const HINT_COST = 30, IMPULSE_COST = 15;
 
 /* ================= state & storage ================= */
 const SAVE_KEY = "neuro-lockdown-v1";
-const fresh = () => ({ team: "", minutes: 30, elapsed: 0, penalty: 0, solved: {}, hints: {}, impulse: 0, started: false, finished: false, finalTime: 0, sound: true, overtimeShown: false, gm: false });
+const fresh = () => ({ mode: "digital", team: "", minutes: 30, elapsed: 0, penalty: 0, solved: {}, hints: {}, impulse: 0, started: false, finished: false, finalTime: 0, sound: true, overtimeShown: false, gm: false });
 let S = fresh();
 const store = {
   load() { try { return JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { return null; } },
@@ -1221,6 +1229,27 @@ const ROOMS = [
   fact: "The prefrontal cortex is the last part of the brain to finish developing, around age 25.",
   answer: "Arrange the letters to spell LEARNING. The big red button is an impulse-control trap (+15 s each press).",
   build(c, solve) {
+    if (T()) {
+      c.innerHTML = `
+        <h3>Override console</h3>
+        <p style="margin-top:10px">Open the Brain Box. Arrange the eight letter tiles inside it, then type the override code here.</p>
+        <form class="pw" id="fr-pw"><label for="fr-in" class="eyebrow" style="width:100%">8-letter override code</label><input id="fr-in" type="text" maxlength="12" autocomplete="off" spellcheck="false" placeholder="········"><button class="btn primary" type="submit">Override</button></form>
+        <p class="feedback" id="fr-fb" aria-live="polite"></p>
+        <div class="redzone"><button class="bigred" id="fr-red">INSTANT<br>ESCAPE</button><span class="eyebrow" id="fr-rl">Press for an instant solution!</span></div>`;
+      let done = false, presses = 0; const fb = $("#fr-fb", c);
+      $("#fr-pw", c).onsubmit = e => {
+        e.preventDefault(); if (done) return;
+        const v = $("#fr-in", c).value.trim().toUpperCase();
+        if (v === "LEARNING") { done = true; fb.className = "feedback good"; fb.textContent = "OVERRIDE ACCEPTED"; $("#fr-red", c).disabled = true; setTimeout(solve, 900); }
+        else { Sound.bad(); fb.className = "feedback badf"; fb.textContent = v.length === 8 ? "Override rejected. Rearrange the tiles and plan it out." : "The override code has exactly 8 letters, one from each tile."; }
+      };
+      $("#fr-red", c).onclick = () => {
+        presses++; S.impulse++; if (S.minutes) S.penalty += IMPULSE_COST; store.save(); Sound.alarm(0.08);
+        $("#fr-rl", c).textContent = presses === 1 ? "That was a test." : presses === 2 ? "Seriously. Don't." : `Impulses detected: ${presses}`;
+        showFlash("Impulse detected!", `That button was a test of your <b>frontal lobe</b>. Its job is <b>impulse control</b>: stopping to think before you act. There is no instant escape, only planning.${S.minutes ? ` <b>−${IMPULSE_COST} seconds.</b>` : ""}`);
+      };
+      return;
+    }
     const WORD = "LEARNING"; let tiles; do { tiles = shuffle(WORD.split("")); } while (tiles.join("") === WORD);
     c.innerHTML = `
       <h3>Override code</h3>
@@ -1256,13 +1285,23 @@ const LETTER_ROOMS = ROOMS.filter(r => !r.final);
 
 /* ================= progression ================= */
 const solvedCount = () => LETTER_ROOMS.filter(r => S.solved[r.id]).length;
+const T = () => S.mode === "terminal";
+const PAPER = { brainstem: 1, thalamus: 2, hypothalamus: 3, hippocampus: 4, limbic: 5, synapse: 6 };
+const POUCH = "862";
 function access(r) {
+  if (T()) {
+    if (PAPER[r.id]) return "paper";
+    if (S.solved[r.id]) return "solved";
+    if (r.id === "amygdala") return "open";
+    if (r.id === "temporal") return S.solved.amygdala ? "open" : "locked";
+    return S.solved.temporal ? "open" : "locked";
+  }
   if (S.solved[r.id]) return "solved";
   if (r.id === "brainstem") return "open";
   if (r.final) return solvedCount() === LETTER_ROOMS.length ? "open" : "locked";
   return S.solved.brainstem ? "open" : "locked";
 }
-function lockReason(r) { return r.final ? `Needs all 8 letters (${solvedCount()}/8)` : "Restore life support first"; }
+function lockReason(r) { if (T()) return r.id === "temporal" ? "Calm the amygdala first" : "Clear the Sound Lab first"; return r.final ? `Needs all 8 letters (${solvedCount()}/8)` : "Restore life support first"; }
 
 /* ================= screens ================= */
 let current = null, cleanup = null;
@@ -1276,6 +1315,7 @@ function leaveRoom() { if (cleanup) { try { cleanup(); } catch (e) {} } cleanup 
 
 /* ---- HUD ---- */
 function renderSlots(pop) {
+  $("#codewrap").hidden = T();
   const got = S.finished ? "LEARNING".split("") : LETTER_ROOMS.filter(r => S.solved[r.id]).map(r => r.letter).sort();
   $("#slots").innerHTML = Array.from({ length: 8 }, (_, i) => `<span class="slot ${got[i] ? "on" : ""} ${pop && got[i] === pop ? "pop" : ""}">${got[i] || ""}</span>`).join("");
   $("#hud-team").textContent = S.team || "Team";
@@ -1291,9 +1331,13 @@ function renderTimer() {
 
 /* ---- hub ---- */
 function renderHub() {
+  $("#lg-paper").hidden = !T();
   const m = $("#markers");
   m.innerHTML = ROOMS.map(r => {
     const a = access(r);
+    if (a === "paper") return `<g class="mk paper" transform="translate(${r.x} ${r.y})" aria-label="${r.name}: paper station ${PAPER[r.id]}">
+      <circle class="dot" r="15" style="stroke:var(--heat);fill:var(--deep)"/><text class="ltr" text-anchor="middle" y="5" style="fill:var(--heat)">${PAPER[r.id]}</text>
+      <text class="lbl" x="${r.lx}" y="${r.ly}" text-anchor="${r.anchor}">${r.name}</text></g>`;
     const inner = a === "solved" ? `<text class="ltr" text-anchor="middle" y="5">${r.final ? "✓" : r.letter}</text>`
       : a === "locked" ? `<path class="glyph" d="${GL.lock}"/>`
       : r.final ? `<path class="glyph" style="stroke:var(--heat)" d="${GL.exit}"/>` : `<circle r="4" fill="var(--signal)"/>`;
@@ -1303,6 +1347,10 @@ function renderHub() {
   }).join("");
   $("#roomlist").innerHTML = ROOMS.map(r => {
     const a = access(r);
+    if (a === "paper") return `<li><button class="paper" disabled style="opacity:.8;cursor:default">
+      <span class="st" style="border-color:var(--heat);color:var(--heat)">${PAPER[r.id]}</span>
+      <span class="nm">${r.name}<small>${r.title} · in the room</small></span>
+      <span class="tg" style="color:var(--heat)">Station ${PAPER[r.id]}</span></button></li>`;
     return `<li><button class="${a} ${r.final ? "final" : ""}" data-room="${r.id}" ${a === "locked" ? "disabled" : ""}>
       <span class="st">${a === "solved" ? (r.final ? "✓" : r.letter) : r.final ? "⇥" : a === "open" ? "•" : ""}</span>
       <span class="nm">${r.name}<small>${r.title}</small></span>
@@ -1310,6 +1358,14 @@ function renderHub() {
   }).join("");
   const n = solvedCount();
   $("#prog").style.width = (n / 8 * 100) + "%";
+  if (T()) {
+    const k = ["amygdala", "temporal", "frontal"].filter(id => S.solved[id]).length;
+    $("#prog").style.width = (k / 3 * 100) + "%";
+    if (!S.solved.amygdala) { $("#log-title").textContent = "Brain Terminal: stress alarm"; $("#log-brief").textContent = "The six orange stations are around the room on paper. This terminal holds the two rooms that need sound, plus the final override. Start by calming Maya's amygdala."; }
+    else if (!S.solved.temporal) { $("#log-title").textContent = "Brain Terminal: Sound Lab open"; $("#log-brief").textContent = "The alarm is off. Tune in the Sound Lab to get the code for the Synapse Lab pouch."; }
+    else { $("#log-title").textContent = "Override console ready"; $("#log-brief").textContent = "When your team opens the Brain Box, arrange the letter tiles inside and enter the override code in the frontal lobe."; }
+    return;
+  }
   if (!S.solved.brainstem) { $("#log-title").textContent = "Restore life support first"; $("#log-brief").textContent = "Maya's brainstem is failing. Nothing else in the brain can open until breathing and heartbeat are back online."; }
   else if (n < 8) { $("#log-title").textContent = `${n} of 8 letters recovered`; $("#log-brief").textContent = "Every inner room is unsealed. Clear them in any order. Each one gives a letter of the override code. The exit in the frontal lobe opens when you have all eight."; }
   else { $("#log-title").textContent = "The exit is open"; $("#log-brief").textContent = "You have all eight letters. Head to the frontal lobe, the brain's command center, and enter the override code."; }
@@ -1317,7 +1373,7 @@ function renderHub() {
 
 /* ---- room ---- */
 function openRoom(id) {
-  const r = byId[id]; if (!r || access(r) === "locked") return;
+  const r = byId[id]; if (!r || access(r) === "locked" || access(r) === "paper") return;
   leaveRoom(); current = r; Sound.click();
   $("#r-eyebrow").textContent = r.final ? "Final room · Exit" : `Room · ${r.name}`;
   $("#r-title").innerHTML = `${r.title}`;
@@ -1347,6 +1403,19 @@ function useHint() {
   if (S.minutes) toast(`Hint unlocked · −${HINT_COST} seconds`);
 }
 function renderSolved(r, fresh) {
+  if (T()) {
+    const pouch = r.id === "temporal";
+    $("#r-console").innerHTML = `
+    <div class="solved-panel">
+      <p class="eyebrow">${fresh ? "Room cleared" : "Already cleared"}</p>
+      ${pouch ? `<p class="eyebrow" style="color:var(--heat)">Synapse Lab pouch code</p><div class="row">${POUCH.split("").map(d => `<div class="bigletter" style="width:90px;height:110px;font-size:3.4rem">${d}</div>`).join("")}</div>
+        <p>Find the pouch labeled <b>SYNAPSE LAB</b> and open its lock with this code.</p>`
+      : `<div class="bigletter" style="border-color:var(--ok)">✓</div><h3 style="color:var(--text);text-transform:none;letter-spacing:0;font-size:1.4rem">Alarm off. The Sound Lab is unlocked.</h3>`}
+      <div class="factcard"><b>Brain fact unlocked</b>${r.fact}</div>
+      <div class="row"><button class="btn primary" data-act="${pouch ? "map" : "go-temporal"}">${pouch ? "Back to the brain map" : "Open the Sound Lab →"}</button></div>
+    </div>`;
+    $("#r-hintbar").hidden = true; return;
+  }
   $("#r-console").innerHTML = `
     <div class="solved-panel">
       <p class="eyebrow">${fresh ? "Room cleared" : "Already cleared"}</p>
@@ -1368,7 +1437,7 @@ function solveRoom(r) {
   if (r.final) { win(); return; }
   if (cleanup) { try { cleanup(); } catch (e) {} cleanup = null; }
   Sound.letter(); renderSlots(first ? r.letter : null); renderSolved(r, true);
-  if (first) toast(`Letter ${r.letter} recovered · ${solvedCount()} of 8`);
+  if (first && !T()) toast(`Letter ${r.letter} recovered · ${solvedCount()} of 8`);
 }
 
 /* ---- win ---- */
@@ -1387,7 +1456,7 @@ function win() {
     <p class="who"><b>${esc(S.team || "Your team")}</b> broke out of lockdown${S.minutes ? (beat ? " before the clock ran out" : " in overtime") : ""}. Maya wakes up rested, hydrated and ready to ace her science test.</p>
     <div class="stats">
       <div class="stat"><b>${fmt(S.finalTime)}</b><span>total time${S.penalty ? ` (incl. ${S.penalty}s penalties)` : ""}</span></div>
-      <div class="stat"><b>9/9</b><span>brain regions cleared</span></div>
+      <div class="stat"><b>9/9</b><span>brain regions cleared${T() ? " (6 in the room, 3 on the terminal)" : ""}</span></div>
       <div class="stat"><b>${hints}</b><span>hints used</span></div>
       <div class="stat"><b>18/18</b><span>brain terms discovered</span></div>
     </div>
@@ -1419,7 +1488,8 @@ function journal() {
 function gmGuide() {
   modal(`<h2 id="modal-title">Game Master guide</h2>
     <p style="color:var(--muted);margin-top:6px">For the person running the escape room. Keep this screen away from players.</p>
-    <p style="margin-top:12px"><b>Flow:</b> Brainstem first → the 7 inner rooms in any order → Frontal lobe exit. Each inner room gives one letter; together they spell <b class="mono">LEARNING</b>.</p>
+    <p style="margin-top:12px"><b>Classroom (hybrid) mode:</b> the printed Game Master kit has the full key. Lock codes: Brainstem <b class="mono">2075</b> · Thalamus <b class="mono">→ ↑ ↓ ←</b> · Hypothalamus <b class="mono">FOCUS</b> · Hippocampus <b class="mono">3816</b> · Limbic <b class="mono">587</b> · Terminal → Synapse pouch <b class="mono">${POUCH}</b> · Synapse → key in the <b>VESICLE</b> · Final override <b class="mono">LEARNING</b>.</p>
+    <p style="margin-top:12px"><b>All-digital mode:</b> Brainstem first → the 7 inner rooms in any order → Frontal lobe exit. Each inner room gives one letter; together they spell <b class="mono">LEARNING</b>.</p>
     <div class="gm-scroll"><table class="gm-table"><thead><tr><th>Room</th><th>Letter</th><th>Solution</th>${S.gm && S.started ? "<th></th>" : ""}</tr></thead><tbody>
     ${ROOMS.map(r => `<tr><th>${r.name}</th><td class="mono">${r.letter || "—"}</td><td>${r.answer}</td>${S.gm && S.started ? `<td><button class="btn small" data-act="gm-skip" data-room="${r.id}" ${S.solved[r.id] || access(r) === "locked" ? "disabled" : ""}>Skip</button></td>` : ""}</tr>`).join("")}
     </tbody></table></div>
@@ -1445,6 +1515,7 @@ function startGame(e) {
   S = fresh();
   S.team = $("#team").value.trim() || "The Neuron Ninjas";
   S.minutes = +($("input[name=mins]:checked").value);
+  S.mode = $("input[name=mode]:checked").value;
   S.started = true; S.sound = true;
   Sound.ensure(); Sound.good();
   store.save(); enterHub();
@@ -1479,6 +1550,7 @@ document.addEventListener("click", e => {
     if (act === "resume") { enterHub(); return; }
     if (act === "restart") { restart(); return; }
     if (act === "go-final") { openRoom("frontal"); return; }
+    if (act === "go-temporal") { openRoom("temporal"); return; }
     if (act === "replay") { const r = current; leaveRoom(); current = r; $("#r-hintbar").hidden = false; cleanup = r.build($("#r-console"), () => { toast("Puzzle cleared again. Nice memory!"); Sound.good(); if (cleanup) { try { cleanup(); } catch (x) {} cleanup = null; } renderSolved(r, false); }) || null; return; }
     if (act === "flash-close") { $("#flash").hidden = true; return; }
     if (act === "sound") { S.sound = !S.sound; if (!S.sound) { Sound.mute(); hush(); } else Sound.ensure(); updateSoundBtn(); store.save(); return; }

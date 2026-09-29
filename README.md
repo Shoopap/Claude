@@ -1,46 +1,45 @@
 # Neuro Lockdown
 
-A digital escape room for **Project #1: Choice Board for the Brain**. Players are shrunk to the size of a cell and trapped inside the brain of Maya, a 7th grader, the night before her science test. They have to clear nine brain regions, recover an 8-letter override code and escape through the frontal lobe.
+A **hybrid** escape room for **Project #1: Choice Board for the Brain**. Players are shrunk to the size of a cell and trapped inside the brain of Maya, a 7th grader, the night before her science test. They move around the classroom solving hands-on puzzles at paper stations, open six real locks on the **Brain Box**, and use one laptop, the **Brain Terminal**, for the two puzzles that need sound and timing.
 
-Open `index.html` in any modern browser (Chrome, Edge, Safari or Firefox; Chromebooks work). No install or internet needed, except for the fonts.
+It is mostly physical on purpose: players wire yarn through a thalamus, carry a code across the room in their memory, match neurotransmitter tokens to situations, and hunt for a key hidden in a "vesicle." The laptop only does what paper can't.
 
-## How it covers the project
+## What's here
 
-All 18 required terms are taught in the field notes and tested by a puzzle:
+| File | What it is |
+|---|---|
+| `Neuro-Lockdown-Print-Kit.pdf` | **Start here.** 16-page printable kit: game master overview, supply list, setup checklist, answer key, station pages, cut-out cards, poster, labels, lock tags and a student worksheet. |
+| `index.html` | The Brain Terminal. Open it in Chrome/Edge/Safari on a laptop or Chromebook and choose **Classroom: Brain Terminal + printed kit**. It also has an all-digital mode for practice or as a backup. |
+| `print-kit/` | Source for the PDF (`kit.html`). Edit it, then run `node render.js` with Playwright to rebuild the PDF. |
 
-| Room | Puzzle | Terms |
-|---|---|---|
-| Brainstem: *Life Support* | Set oxygen/water supply and choose the brain's fuel to restart a heart monitor | Brainstem, Oxygen, Glucose, Water |
-| Thalamus: *The Relay Station* | Wire each sense to the right lobe on a switchboard (smell skips the thalamus!) | Thalamus |
-| Hypothalamus: *The Thermostat* | Answer six body alerts with the right homeostasis response | Hypothalamus, Water, Glucose, Stress |
-| Amygdala: *The Alarm Room* | Calm a stress alarm with three slow, mindful breaths (hold the button to breathe in) | Amygdala, Stress, Mindfulness |
-| Hippocampus: *The Memory Vault* | Repeat growing memory patterns (Sleep, Practice, Water, Calm) | Hippocampus, Memory |
-| Temporal lobes: *The Sound Lab* | Tune a radio until the auditory cortex's message clears, then give the password | Temporal lobes |
-| Limbic system: *Emotion HQ* | Pick the 4 limbic members out of 8 brain structures | Limbic system |
-| Neurotransmitters: *The Synapse Lab* | Fire the right messenger across a synapse for six situations | Neurotransmitters, Dopamine, Serotonin, GABA |
-| Frontal lobe: *Command Center* | Unscramble the 8 letters, and resist the big red "instant escape" button (impulse control) | Frontal lobe |
+## How the room works
 
-The ending screen gives a certificate and a field guide to all 18 terms, which works as a study sheet.
+| Where | Region | Puzzle | Opens |
+|---|---|---|---|
+| Station 1 (paper) | Brainstem | Pick the right fuel card, then read the supply report | 4-digit lock |
+| Station 2 (paper) | Thalamus | Run yarn from each sense through the thalamus to the right lobe; the directions spell the code | Directional lock |
+| Station 3 (paper) | Hypothalamus | Match body alerts to homeostasis responses; the letters spell a word | 5-letter word lock |
+| Station 4 (paper) | Hippocampus | Memory relay: carry numbers from a poster across the room, no writing | 4-digit lock |
+| Station 5 (paper) | Limbic system | Pick the 4 real limbic structures and add their numbers | 3-digit lock |
+| Brain Terminal | Amygdala + Temporal lobes | Calm a live stress alarm with slow breathing, then tune a radio by ear | Synapse pouch (3-digit lock) |
+| Station 6 (in pouch) | Neurotransmitters | Match dopamine/serotonin/GABA to situations; the decoder names where the key is hidden | Keyed padlock |
+| Brain Box | Frontal lobe | Unscramble the letter tiles, resist the red "INSTANT ESCAPE" envelope, type the override at the terminal | Escape! |
 
-## Game Master guide (answer key)
+All 12 primary terms (frontal lobe, temporal lobes, brainstem, limbic system, thalamus, hypothalamus, hippocampus, amygdala, neurotransmitters, dopamine, serotonin, GABA) and all 6 supporting terms (water, stress, mindfulness, memory, oxygen, glucose) are taught in the field notes and used in a puzzle. The Neuro Log worksheet has players record what they learn at each station.
 
-Keep this away from players. The same key is inside the game under **Game Master guide** on the title screen (or open `index.html#gm`), with optional "Skip" buttons for demos.
+## Game master quick key
 
-**Order:** Brainstem first. Then the 7 inner rooms in any order. The Frontal lobe exit opens once all 8 letters are found.
-**Code:** L · E · A · R · N · I · N · G = **LEARNING**
+Keep this away from players. The full key and hint script are on page 3 of the kit.
 
-| Room | Letter | Solution |
-|---|---|---|
-| Brainstem | L | Oxygen 20%, water 75%, fuel = Glucose |
-| Thalamus | E | Sight→Occipital, Sound→Temporal, Touch→Parietal, Taste→Insula, Smell→Olfactory bulb |
-| Hypothalamus | A | Hot→Sweat, Cold→Shiver, Salty blood→Thirst, Low glucose→Hunger, Night→Sleepiness, Pop quiz→Stress hormones |
-| Amygdala | R | Hold the button ~4 s, let go ~4 s, three times (Space bar works too) |
-| Hippocampus | N | Repeat the pattern (random each game) for rounds of 3, 4 and 5 |
-| Temporal lobes | I | Tune until "SIGNAL LOCKED" (random frequency), password **WERNICKE** |
-| Limbic system | N | Amygdala, Hippocampus, Hypothalamus, Cingulate gyrus |
-| Neurotransmitters | G | Rewards/goals → Dopamine; mood/sleep/gut → Serotonin; calming/brakes → GABA |
-| Frontal lobe | — | Spell LEARNING. Don't press the red button. |
+| Lock | Code |
+|---|---|
+| Brainstem | `2075` |
+| Thalamus | `→ ↑ ↓ ←` |
+| Hypothalamus | `FOCUS` |
+| Hippocampus | `3816` |
+| Limbic system | `587` |
+| Synapse pouch (from terminal) | `862` (terminal password: `WERNICKE`) |
+| Key | hidden in the container labeled **VESICLE** |
+| Final override | `LEARNING` |
 
-**Timing:** Pick 30 min, 45 min, or no clock (study mode). Each hint costs 30 seconds; each red-button press costs 15 seconds. When time runs out, players can keep going in overtime. Progress saves in the browser, so refreshing won't lose it.
-
-**Running it in class:** Teams of 2–4 on one laptop work best. Turn sound on: the heart monitor beats, the alarm room has a siren, and the Sound Lab reads its message aloud once it's tuned in.
+**Budget:** about $35–50 for locks, a 6-hole lockout hasp and a pouch, all reusable. The kit also has a $0 envelope option that needs no locks.
