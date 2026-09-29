@@ -1,45 +1,33 @@
 # Neuro Lockdown
 
-A **hybrid** escape room for **Project #1: Choice Board for the Brain**. Players are shrunk to the size of a cell and trapped inside the brain of Maya, a 7th grader, the night before her science test. They move around the classroom solving hands-on puzzles at paper stations, open six real locks on the **Brain Box**, and use one laptop, the **Brain Terminal**, for the two puzzles that need sound and timing.
+An escape room for **Project #1: Choice Board for the Brain**. Players are shrunk to the size of a cell and trapped inside the brain of Maya, a 7th grader, the night before her science test.
 
-It is mostly physical on purpose: players wire yarn through a thalamus, carry a code across the room in their memory, match neurotransmitter tokens to situations, and hunt for a key hidden in a "vesicle." The laptop only does what paper can't.
+It's half paper, half screen:
 
-## What's here
+- **The laptop game** (`index.html`) has 9 brain rooms. Every room starts behind a **sealed door**.
+- **The printed Case File** (`Neuro-Lockdown-Case-File.pdf`, 6 pages, one per team) has a pencil puzzle for each door. Solving it gives the door code.
+- Once a door is open, the team plays that room's puzzle on screen and wins a letter. Eight letters spell the final code, which is entered in the frontal lobe to escape.
 
-| File | What it is |
-|---|---|
-| `Neuro-Lockdown-Print-Kit.pdf` | **Start here.** 16-page printable kit: game master overview, supply list, setup checklist, answer key, station pages, cut-out cards, poster, labels, lock tags and a student worksheet. |
-| `index.html` | The Brain Terminal. Open it in Chrome/Edge/Safari on a laptop or Chromebook and choose **Classroom: Brain Terminal + printed kit**. It also has an all-digital mode for practice or as a backup. |
-| `print-kit/` | Source for the PDF (`kit.html`). Edit it, then run `node render.js` with Playwright to rebuild the PDF. |
+## Setup
 
-## How the room works
+1. Print `Neuro-Lockdown-Case-File.pdf`, one copy per team. No cutting.
+2. Open `index.html` on each team's laptop or Chromebook and choose **With the printed Case File**.
+3. Hand out pencils. Keep `Neuro-Lockdown-Answer-Key.pdf` for yourself.
 
-| Where | Region | Puzzle | Opens |
+## Rooms
+
+| Room | Case File page (paper) | Door code | Screen puzzle |
 |---|---|---|---|
-| Station 1 (paper) | Brainstem | Pick the right fuel card, then read the supply report | 4-digit lock |
-| Station 2 (paper) | Thalamus | Run yarn from each sense through the thalamus to the right lobe; the directions spell the code | Directional lock |
-| Station 3 (paper) | Hypothalamus | Match body alerts to homeostasis responses; the letters spell a word | 5-letter word lock |
-| Station 4 (paper) | Hippocampus | Memory relay: carry numbers from a poster across the room, no writing | 4-digit lock |
-| Station 5 (paper) | Limbic system | Pick the 4 real limbic structures and add their numbers | 3-digit lock |
-| Brain Terminal | Amygdala + Temporal lobes | Calm a live stress alarm with slow breathing, then tune a radio by ear | Synapse pouch (3-digit lock) |
-| Station 6 (in pouch) | Neurotransmitters | Match dopamine/serotonin/GABA to situations; the decoder names where the key is hidden | Keyed padlock |
-| Brain Box | Frontal lobe | Unscramble the letter tiles, resist the red "INSTANT ESCAPE" envelope, type the override at the terminal | Escape! |
+| Brainstem | 2 · circle the automatic jobs | `PONS` | Restore oxygen, water and glucose |
+| Thalamus | 2 · draw sense lines through the thalamus | `→ ↑ ↓ ←` | Wire the sensory switchboard |
+| Hypothalamus | 3 · match alerts to body responses | `FOCUS` | Fix six body alerts |
+| Amygdala | 3 · fill-in word boxes | `CALM` | Calm the stress alarm with slow breathing |
+| Hippocampus | 4 · memory vault (fold the page, 20-second peeks) | `3816` | Repeat memory patterns |
+| Temporal lobes | 5 · match jobs to lobes on a map | `72597` | Tune a radio, password `WERNICKE` |
+| Limbic system | 5 · circle the 4 members and add | `587` | Pick the limbic team |
+| Neurotransmitters | 6 · dopamine / serotonin / GABA decoder | `VESICLE` | Fire messengers across a synapse |
+| Frontal lobe | (none) | — | Unscramble **LEARNING** |
 
-All 12 primary terms (frontal lobe, temporal lobes, brainstem, limbic system, thalamus, hypothalamus, hippocampus, amygdala, neurotransmitters, dopamine, serotonin, GABA) and all 6 supporting terms (water, stress, mindfulness, memory, oxygen, glucose) are taught in the field notes and used in a puzzle. The Neuro Log worksheet has players record what they learn at each station.
+All 12 primary terms and all 6 supporting terms (water, stress, mindfulness, memory, oxygen, glucose) are taught in the on-screen field notes and used in the puzzles.
 
-## Game master quick key
-
-Keep this away from players. The full key and hint script are on page 3 of the kit.
-
-| Lock | Code |
-|---|---|
-| Brainstem | `2075` |
-| Thalamus | `→ ↑ ↓ ←` |
-| Hypothalamus | `FOCUS` |
-| Hippocampus | `3816` |
-| Limbic system | `587` |
-| Synapse pouch (from terminal) | `862` (terminal password: `WERNICKE`) |
-| Key | hidden in the container labeled **VESICLE** |
-| Final override | `LEARNING` |
-
-**Budget:** about $35–50 for locks, a 6-hole lockout hasp and a pouch, all reusable. The kit also has a $0 envelope option that needs no locks.
+"Screen only (practice)" mode skips the doors, for testing the game without paper. The `case-file/` folder has the source for the PDFs.
