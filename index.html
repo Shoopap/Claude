@@ -1,0 +1,1578 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Neuro Lockdown</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600;700&family=Oxanium:wght@500;600;700;800&display=swap">
+<style>
+/* Layout: a fluorescence-microscope lab console. Brain map on the left, mission log on the right;
+   each room opens as a two-bay station: field notes (learn) beside the puzzle console (prove it). */
+:root{
+  --void:#060a1a;      /* microscope darkfield */
+  --deep:#0c1230;
+  --panel:#121a3c;
+  --panel-2:#19224d;
+  --line:#2a3570;
+  --text:#e9ecff;
+  --muted:#a2abdb;
+  --stain:#ff4fa3;     /* fluorescent neuron stain */
+  --signal:#4fe3ff;    /* calcium-imaging cyan */
+  --heat:#ffb547;      /* fMRI activation amber */
+  --ok:#57efa2;
+  --bad:#ff6363;
+  --f-display:"Oxanium","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",Verdana,system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:12px;
+  --alarm:0;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--void);color:var(--text);font:16px/1.55 var(--f-body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--signal);outline-offset:3px;border-radius:6px}
+h1,h2,h3,h4{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:.01em}
+p{margin:0}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+#net{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.app{position:relative;z-index:1;min-height:100%;display:flex;flex-direction:column;padding-inline:16px;padding-block:0 32px}
+.wrap{width:100%;max-width:1240px;margin-inline:auto}
+
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5em;border:1px solid var(--line);background:var(--panel-2);border-radius:999px;padding:.62em 1.2em;font-family:var(--f-display);font-weight:600;letter-spacing:.04em;transition:transform .15s,background .15s,border-color .15s,box-shadow .15s}
+.btn:hover{border-color:var(--signal);transform:translateY(-1px)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn.primary{background:var(--signal);color:var(--void);border-color:var(--signal);box-shadow:0 0 24px color-mix(in srgb,var(--signal) 45%,transparent)}
+.btn.primary:hover{box-shadow:0 0 36px color-mix(in srgb,var(--signal) 70%,transparent)}
+.btn.ghost{background:transparent}
+.btn.small{padding:.4em .9em;font-size:.85rem}
+.linkbtn{background:none;border:0;color:var(--muted);text-decoration:underline;text-underline-offset:3px;padding:0}
+.linkbtn:hover{color:var(--text)}
+
+/* ---------- intro ---------- */
+#intro{padding-block:clamp(24px,6vh,72px) 24px}
+.intro-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:clamp(24px,4vw,56px);align-items:start}
+.title{font-size:clamp(3rem,9vw,6.6rem);line-height:.88;font-weight:800;letter-spacing:-.01em;text-transform:uppercase}
+.title .l1{display:block;color:var(--text)}
+.title .l2{display:block;color:transparent;-webkit-text-stroke:2px var(--stain);text-shadow:0 0 38px color-mix(in srgb,var(--stain) 55%,transparent)}
+.tagline{margin-top:14px;font-family:var(--f-display);font-size:clamp(1.05rem,2vw,1.3rem);color:var(--signal);letter-spacing:.04em}
+.story{margin-top:26px;max-width:62ch;font-size:1.08rem;color:var(--text);min-height:9.5em}
+.story .caret{display:inline-block;width:.55em;height:1.05em;background:var(--signal);vertical-align:-.15em;margin-left:2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.setup{margin-top:26px;display:grid;gap:16px;max-width:560px}
+.field label{display:block;margin-bottom:6px}
+.field input[type=text]{width:100%;background:var(--deep);border:1px solid var(--line);border-radius:10px;padding:.7em .9em;font-size:1.05rem}
+.field input[type=text]:focus{border-color:var(--signal);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--signal) 30%,transparent)}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{border:1px solid var(--line);border-radius:999px;padding:.45em 1em;cursor:pointer;font-family:var(--f-mono);font-size:.88rem;background:var(--deep)}
+.seg input:checked+label{border-color:var(--signal);color:var(--signal);background:color-mix(in srgb,var(--signal) 12%,var(--deep))}
+.seg input:focus-visible+label{outline:3px solid var(--signal);outline-offset:2px}
+.intro-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.intro-foot{margin-top:28px;display:flex;flex-wrap:wrap;gap:18px;color:var(--muted);font-size:.9rem}
+
+.casefile{position:relative;background:linear-gradient(160deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:var(--r);padding:22px 22px 18px;box-shadow:0 30px 80px -30px #000}
+.casefile::before{content:"";position:absolute;inset:0;border-radius:inherit;background:repeating-linear-gradient(0deg,transparent 0 3px,color-mix(in srgb,var(--signal) 4%,transparent) 3px 4px);pointer-events:none}
+.casefile h2{font-size:1.05rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.casefile .pname{font-size:2rem;font-weight:700;margin-top:6px}
+.casefile dl{display:grid;grid-template-columns:auto 1fr;gap:8px 18px;margin:16px 0 0;font-size:.95rem}
+.casefile dt{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding-top:.2em}
+.casefile dd{margin:0}
+.status-lock{color:var(--bad);font-family:var(--f-mono);font-weight:700;letter-spacing:.1em;animation:flick 2.4s infinite}
+@keyframes flick{0%,100%{opacity:1}47%{opacity:1}48%{opacity:.3}50%{opacity:1}72%{opacity:.6}73%{opacity:1}}
+.mini-ecg{margin-top:16px;width:100%;height:56px;display:block}
+.howto{margin-top:16px;border-top:1px dashed var(--line);padding-top:14px;display:grid;gap:8px;font-size:.93rem;color:var(--muted)}
+.howto b{color:var(--text)}
+
+/* ---------- HUD ---------- */
+#hud{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin-inline:-16px;padding:10px 16px;background:color-mix(in srgb,var(--void) 82%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.hud-in{display:flex;align-items:center;gap:16px 24px;flex-wrap:wrap}
+.brand{font-family:var(--f-display);font-weight:800;letter-spacing:.08em;text-transform:uppercase;font-size:1rem;line-height:1.1}
+.brand small{display:block;font-family:var(--f-mono);font-weight:400;letter-spacing:.1em;color:var(--muted);font-size:.7rem;text-transform:none}
+.timer{font-family:var(--f-mono);font-weight:700;font-size:1.7rem;font-variant-numeric:tabular-nums;color:var(--heat);text-shadow:0 0 18px color-mix(in srgb,var(--heat) 45%,transparent);min-width:5.2ch}
+.timer.low{color:var(--bad);animation:pulse 1s infinite}
+.timer.over{color:var(--bad)}
+@keyframes pulse{50%{opacity:.55}}
+.code{display:flex;gap:6px;align-items:center}
+.code .lbl{margin-right:4px}
+.slot{width:30px;height:38px;border-radius:6px;border:1px dashed var(--line);display:grid;place-items:center;font-family:var(--f-mono);font-weight:700;font-size:1.1rem;color:var(--muted)}
+.slot.on{border:1px solid var(--stain);color:var(--text);background:color-mix(in srgb,var(--stain) 18%,var(--deep));box-shadow:0 0 14px color-mix(in srgb,var(--stain) 40%,transparent)}
+.slot.pop{animation:pop .7s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{0%{transform:scale(.3) rotate(-20deg)}100%{transform:none}}
+.hud-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+
+/* ---------- hub ---------- */
+#hub{padding-block:22px}
+.hub-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:24px;align-items:start}
+.mapcard{position:relative;background:radial-gradient(120% 90% at 40% 45%,color-mix(in srgb,var(--panel-2) 90%,transparent),color-mix(in srgb,var(--deep) 70%,transparent));border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.mapcard .eyebrow{position:absolute;left:18px;top:14px}
+.maplegend{display:flex;gap:16px;flex-wrap:wrap;font-size:.82rem;color:var(--muted);padding:4px 6px 0}
+.maplegend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+#brain{width:100%;height:auto;display:block;overflow:visible}
+#brain .cere{fill:color-mix(in srgb,var(--panel-2) 70%,var(--void));stroke:color-mix(in srgb,var(--signal) 55%,transparent);stroke-width:2}
+#brain .lobe{opacity:.55}
+#brain .lobe.frontal{fill:color-mix(in srgb,var(--heat) 22%,transparent)}
+#brain .lobe.temporal{fill:color-mix(in srgb,var(--signal) 18%,transparent)}
+#brain .gyri path{fill:none;stroke:color-mix(in srgb,var(--signal) 22%,transparent);stroke-width:1.6;stroke-linecap:round}
+#brain .sulcus{fill:none;stroke:color-mix(in srgb,var(--signal) 50%,transparent);stroke-width:2.2;stroke-linecap:round}
+#brain .cbl{fill:color-mix(in srgb,var(--panel) 80%,var(--void));stroke:color-mix(in srgb,var(--signal) 40%,transparent);stroke-width:2}
+#brain .cbl-f{fill:none;stroke:color-mix(in srgb,var(--signal) 25%,transparent);stroke-width:1.4}
+#brain .stem{fill:color-mix(in srgb,var(--stain) 14%,var(--panel));stroke:color-mix(in srgb,var(--stain) 55%,transparent);stroke-width:2}
+#brain .deep{fill:color-mix(in srgb,var(--stain) 30%,transparent);stroke:var(--stain);stroke-width:1.6}
+#brain .hippo{fill:none;stroke:color-mix(in srgb,var(--stain) 55%,transparent);stroke-width:12;stroke-linecap:round}
+#brain .ring{fill:none;stroke:color-mix(in srgb,var(--stain) 60%,transparent);stroke-width:3;stroke-dasharray:3 7;stroke-linecap:round}
+#brain .neuron{fill:none;stroke:color-mix(in srgb,var(--signal) 70%,transparent);stroke-width:2;stroke-linecap:round}
+#brain .neuron-soma{fill:color-mix(in srgb,var(--signal) 40%,transparent);stroke:var(--signal);stroke-width:1.5}
+#brain .face-lbl{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;fill:var(--muted)}
+.mk{cursor:pointer}
+.mk .ring-a{fill:none;stroke:var(--signal);stroke-width:2;opacity:0;transform-box:fill-box;transform-origin:center}
+.mk.open .ring-a{opacity:1;animation:ping 2s infinite}
+@keyframes ping{0%{transform:scale(.8);opacity:.9}100%{transform:scale(2.1);opacity:0}}
+.mk .dot{fill:var(--deep);stroke:var(--muted);stroke-width:2;transition:fill .2s}
+.mk.open .dot{fill:color-mix(in srgb,var(--signal) 30%,var(--deep));stroke:var(--signal)}
+.mk.solved .dot{fill:color-mix(in srgb,var(--ok) 30%,var(--deep));stroke:var(--ok)}
+.mk.final.open .dot{fill:color-mix(in srgb,var(--heat) 35%,var(--deep));stroke:var(--heat)}
+.mk.final.open .ring-a{stroke:var(--heat)}
+.mk:hover .dot,.mk:focus-visible .dot{fill:color-mix(in srgb,var(--signal) 55%,var(--deep))}
+.mk .glyph{fill:none;stroke:var(--muted);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.mk .ltr{font-family:var(--f-mono);font-weight:700;font-size:14px;fill:var(--ok);pointer-events:none}
+.mk .lbl{font-family:var(--f-display);font-weight:600;font-size:13.5px;fill:var(--text);paint-order:stroke;stroke:var(--void);stroke-width:4px;stroke-linejoin:round;pointer-events:none}
+.mk.locked .lbl{fill:var(--muted)}
+.mk:focus{outline:none}
+.mk:focus-visible .dot{stroke:var(--heat);stroke-width:3}
+
+.log{background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.log h2{font-size:1.25rem}
+.log .brief{color:var(--muted);margin-top:6px;font-size:.95rem}
+.progress{margin-top:14px;height:8px;background:var(--deep);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--signal),var(--stain));transition:width .6s}
+.rooms{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:6px}
+.rooms button{width:100%;display:grid;grid-template-columns:28px 1fr auto;gap:12px;align-items:center;text-align:left;border:1px solid transparent;background:transparent;border-radius:10px;padding:8px 10px;transition:background .15s,border-color .15s}
+.rooms button:hover:not(:disabled){background:var(--panel-2);border-color:var(--line)}
+.rooms button:disabled{cursor:not-allowed;opacity:.55}
+.rooms .st{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--muted);font-family:var(--f-mono);font-size:.8rem;font-weight:700}
+.rooms .open .st{border-color:var(--signal);box-shadow:0 0 10px color-mix(in srgb,var(--signal) 50%,transparent)}
+.rooms .solved .st{border-color:var(--ok);color:var(--ok)}
+.rooms .final .st{border-color:var(--heat)}
+.rooms .nm{font-family:var(--f-display);font-weight:600;line-height:1.2}
+.rooms .nm small{display:block;font-family:var(--f-body);font-weight:400;color:var(--muted);font-size:.84rem}
+.rooms .tg{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.rooms .solved .tg{color:var(--ok)}
+.rooms .open .tg{color:var(--signal)}
+
+/* ---------- room ---------- */
+#room{padding-block:18px}
+.room-head{display:flex;flex-wrap:wrap;align-items:end;gap:10px 20px;justify-content:space-between}
+.room-head h2{font-size:clamp(1.8rem,4vw,2.7rem);line-height:1.05;font-weight:800}
+.room-head h2 span{color:var(--stain)}
+.room-head .sub{color:var(--muted);margin-top:4px}
+.room-grid{margin-top:16px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:18px;align-items:start}
+.notes{background:color-mix(in srgb,var(--panel) 94%,transparent);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;max-height:calc(100vh - 190px);overflow:auto}
+.notes .eyebrow{display:flex;justify-content:space-between;gap:8px}
+.notes .lead{font-size:1.1rem;margin-top:10px}
+.notes h4{font-size:1rem;letter-spacing:.06em;text-transform:uppercase;color:var(--signal);margin-top:18px}
+.notes ul{margin:8px 0 0;padding-left:1.1em;display:grid;gap:4px}
+.notes p{margin-top:8px}
+.notes dl{margin:8px 0 0;display:grid;gap:10px}
+.notes dt{font-family:var(--f-display);font-weight:700;color:var(--heat)}
+.notes dd{margin:2px 0 0}
+.notes .pron{font-family:var(--f-mono);font-size:.85em;color:var(--muted)}
+.notes .mission{margin-top:18px;border:1px solid color-mix(in srgb,var(--heat) 50%,var(--line));background:color-mix(in srgb,var(--heat) 8%,transparent);border-radius:10px;padding:12px 14px}
+.notes .mission b{color:var(--heat);font-family:var(--f-display);letter-spacing:.06em;text-transform:uppercase;font-size:.85rem;display:block}
+.term{color:var(--stain);font-weight:700}
+.console{position:relative;background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:var(--r);padding:20px;min-height:420px;overflow:hidden}
+.console::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 50%,transparent 55%,color-mix(in srgb,var(--bad) calc(var(--alarm) * 60%),transparent));transition:background .6s}
+.console h3{font-size:1.05rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.feedback{min-height:1.6em;margin-top:12px;font-weight:700}
+.feedback.good{color:var(--ok)}
+.feedback.badf{color:var(--bad)}
+.hintbar{margin-top:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.hintbar .cost{color:var(--muted);font-size:.85rem}
+.hints{list-style:none;padding:0;margin:10px 0 0;display:grid;gap:8px}
+.hints li{border-left:3px solid var(--heat);background:color-mix(in srgb,var(--heat) 8%,transparent);padding:8px 12px;border-radius:0 8px 8px 0;animation:slidein .35s ease-out}
+@keyframes slidein{from{opacity:0;transform:translateX(-8px)}}
+.shake{animation:shake .45s}
+@keyframes shake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+
+/* solved overlay */
+.solved-panel{display:grid;gap:16px;justify-items:start;animation:slidein .4s}
+.bigletter{width:110px;height:130px;border-radius:14px;display:grid;place-items:center;font-family:var(--f-mono);font-weight:700;font-size:4.2rem;color:var(--text);background:color-mix(in srgb,var(--stain) 22%,var(--deep));border:2px solid var(--stain);box-shadow:0 0 50px color-mix(in srgb,var(--stain) 60%,transparent);animation:flip .9s cubic-bezier(.2,1.4,.4,1)}
+@keyframes flip{0%{transform:perspective(500px) rotateY(180deg) scale(.4);opacity:0}100%{transform:none;opacity:1}}
+.factcard{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--deep);max-width:60ch}
+.factcard b{font-family:var(--f-display);color:var(--signal);letter-spacing:.06em;text-transform:uppercase;font-size:.8rem;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+/* brainstem */
+.monitor{background:#02060f;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.ecg{width:100%;height:120px;display:block}
+.vitals{display:flex;flex-wrap:wrap;gap:6px 18px;font-family:var(--f-mono);font-size:.82rem;color:var(--muted);margin-top:6px}
+.vitals b{color:var(--ok);font-size:1.05rem}
+.vitals .sys{margin-left:auto;color:var(--bad);font-weight:700;letter-spacing:.08em}
+.vitals .sys.ok{color:var(--ok)}
+.sliders{display:grid;gap:14px;margin-top:16px}
+.sl label{display:flex;justify-content:space-between;gap:10px;font-family:var(--f-display);font-weight:600}
+.sl label output{font-family:var(--f-mono);color:var(--heat);font-size:1.05rem}
+.sl small{display:block;color:var(--muted);font-size:.85rem;margin-bottom:4px}
+input[type=range]{width:100%;accent-color:var(--signal);height:28px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chip{border:1px solid var(--line);background:var(--deep);border-radius:999px;padding:.45em 1em;font-family:var(--f-display);font-weight:600}
+.chip[aria-pressed=true]{border-color:var(--heat);color:var(--heat);background:color-mix(in srgb,var(--heat) 12%,var(--deep))}
+fieldset{border:0;padding:0;margin:0}
+legend{font-family:var(--f-display);font-weight:600;padding:0}
+
+/* thalamus */
+.board{position:relative;display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-top:12px}
+.board svg.cables{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.jacks{display:grid;gap:10px;position:relative;z-index:1}
+.jack{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--deep);border-radius:10px;padding:.55em .8em;font-family:var(--f-display);font-weight:600;text-align:left;line-height:1.15;transition:border-color .15s,background .15s}
+.jacks.out .jack{flex-direction:row-reverse;text-align:right}
+.jack .pin{flex:none;width:14px;height:14px;border-radius:50%;border:2px solid var(--muted);background:var(--void)}
+.jack small{display:block;font-family:var(--f-body);font-weight:400;color:var(--muted);font-size:.78rem}
+.jack.armed{border-color:var(--heat);background:color-mix(in srgb,var(--heat) 14%,var(--deep))}
+.jack.wired .pin{border-color:var(--c,var(--signal));background:var(--c,var(--signal))}
+.core{position:relative;z-index:0;width:clamp(74px,12vw,110px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;text-align:center;font-family:var(--f-mono);font-size:.68rem;letter-spacing:.12em;color:var(--stain);background:radial-gradient(circle,color-mix(in srgb,var(--stain) 30%,var(--deep)),var(--deep) 70%);border:2px solid color-mix(in srgb,var(--stain) 60%,transparent)}
+.core.live{animation:corepulse 1.2s infinite}
+@keyframes corepulse{50%{box-shadow:0 0 40px color-mix(in srgb,var(--stain) 70%,transparent)}}
+.cable{fill:none;stroke-width:3.5;stroke-linecap:round;opacity:.9}
+.cable.flow{stroke-dasharray:6 10;animation:flow .6s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-16}}
+
+/* hypothalamus */
+.alertcard{border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--deep);display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;margin-top:12px}
+.alertcard p{font-size:1.15rem;font-weight:700}
+.alertcard .tag{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.14em;color:var(--bad)}
+.thermo{width:34px;height:120px;border-radius:17px;border:2px solid var(--line);position:relative;overflow:hidden;background:#02060f}
+.thermo i{position:absolute;left:0;right:0;bottom:0;height:var(--lvl,90%);background:var(--bad);transition:height .8s,background .8s}
+.thermo.okk i{background:var(--ok);height:50%}
+.resp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}
+.resp button{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:.8em .6em;font-family:var(--f-display);font-weight:600;line-height:1.2}
+.resp button:hover{border-color:var(--signal)}
+.resp button small{display:block;font-family:var(--f-body);font-weight:400;color:var(--muted);font-size:.78rem;margin-top:2px}
+.pips{display:flex;gap:6px;margin-top:14px}
+.pips i{flex:1;height:6px;border-radius:3px;background:var(--line)}
+.pips i.on{background:var(--ok)}
+
+/* amygdala */
+.stressbar{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;font-family:var(--f-mono);font-size:.85rem}
+.stressbar .bar{height:14px;border-radius:7px;background:var(--deep);border:1px solid var(--line);overflow:hidden}
+.stressbar .bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--heat),var(--bad));transition:width 1s}
+.breathe-stage{position:relative;height:250px;display:grid;place-items:center;margin-top:10px}
+.lung{width:90px;height:90px;border-radius:50%;background:radial-gradient(circle at 35% 35%,color-mix(in srgb,var(--signal) 80%,white),color-mix(in srgb,var(--signal) 35%,var(--deep)));box-shadow:0 0 60px color-mix(in srgb,var(--signal) 50%,transparent);transition:transform 4s cubic-bezier(.4,0,.3,1)}
+.lung.in{transform:scale(2.4)}
+.guide-ring{position:absolute;width:216px;height:216px;border-radius:50%;border:2px dashed color-mix(in srgb,var(--signal) 50%,transparent)}
+.cue{text-align:center;margin:4px 0 12px;min-height:3.2em;font-family:var(--f-display);font-size:1.35rem;font-weight:700}
+.cue small{display:block;font-family:var(--f-body);font-weight:400;font-size:.9rem;color:var(--muted)}
+.breathe-btn{width:100%;padding:1em;border-radius:14px;border:2px solid var(--signal);background:color-mix(in srgb,var(--signal) 14%,var(--deep));font-family:var(--f-display);font-weight:700;font-size:1.1rem;letter-spacing:.06em;touch-action:none;user-select:none;-webkit-user-select:none}
+.breathe-btn.hold{background:var(--signal);color:var(--void)}
+.cycles{display:flex;gap:10px;justify-content:center;margin-top:12px}
+.cycles i{width:14px;height:14px;border-radius:50%;border:2px solid var(--muted)}
+.cycles i.on{background:var(--ok);border-color:var(--ok)}
+
+/* hippocampus */
+.orbs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;max-width:420px;margin:16px auto 0}
+.orb{aspect-ratio:1.35;border-radius:18px;border:2px solid color-mix(in srgb,var(--c) 55%,transparent);background:color-mix(in srgb,var(--c) 10%,var(--deep));display:grid;place-items:center;align-content:center;gap:6px;font-family:var(--f-display);font-weight:700;font-size:1.05rem;letter-spacing:.06em;color:var(--text);transition:background .12s,box-shadow .12s,transform .12s}
+.orb svg{width:38px;height:38px;fill:none;stroke:var(--c);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.orb.lit{background:color-mix(in srgb,var(--c) 70%,var(--deep));box-shadow:0 0 40px var(--c);transform:scale(1.04);color:var(--void)}
+.orb.lit svg{stroke:var(--void)}
+.orb:disabled{cursor:default}
+.mem-status{text-align:center;margin-top:14px;font-family:var(--f-mono);color:var(--muted)}
+
+/* temporal */
+.radio{background:#02060f;border:1px solid var(--line);border-radius:12px;padding:14px}
+.radio canvas{width:100%;height:90px;display:block}
+.freq{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px}
+.freq .mhz{font-family:var(--f-mono);font-size:2rem;font-weight:700;color:var(--heat)}
+.freq .lockst{font-family:var(--f-mono);font-size:.8rem;letter-spacing:.12em;color:var(--muted)}
+.freq .lockst.on{color:var(--ok)}
+.transcript{margin-top:14px;font-family:var(--f-mono);font-size:.95rem;line-height:1.6;border:1px dashed var(--line);border-radius:10px;padding:12px 14px;min-height:8.5em;transition:filter .2s;word-break:break-word}
+.pw{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.pw input{flex:1;min-width:160px;background:var(--deep);border:1px solid var(--line);border-radius:10px;padding:.65em .9em;font-family:var(--f-mono);text-transform:uppercase;letter-spacing:.1em}
+
+/* limbic */
+.team{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}
+.member{border:1px solid var(--line);background:var(--deep);border-radius:12px;padding:14px 8px;font-family:var(--f-display);font-weight:700;line-height:1.2;min-height:84px;display:grid;place-items:center;text-align:center;transition:all .15s}
+.member[aria-pressed=true]{border-color:var(--stain);background:color-mix(in srgb,var(--stain) 20%,var(--deep));box-shadow:0 0 18px color-mix(in srgb,var(--stain) 35%,transparent)}
+.member.win{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 18%,var(--deep))}
+.member.out{opacity:.25}
+
+/* synapse */
+.syn-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:16px;align-items:center;margin-top:12px}
+.syn svg{width:100%;height:auto;display:block}
+.scen{border:1px solid var(--line);border-radius:12px;background:var(--deep);padding:16px}
+.scen p{font-size:1.1rem;font-weight:700;margin-top:6px}
+.mols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+.mol{font-size:.92rem;min-width:0;overflow-wrap:anywhere;border:2px solid var(--c);background:color-mix(in srgb,var(--c) 12%,var(--deep));border-radius:12px;padding:.8em .4em;font-family:var(--f-display);font-weight:700;line-height:1.2}
+.mol:hover{background:color-mix(in srgb,var(--c) 26%,var(--deep))}
+.mol small{display:block;font-family:var(--f-mono);font-weight:400;font-size:.72rem;color:var(--muted);margin-top:3px}
+
+/* frontal */
+.codebox{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:18px}
+.cslot{width:48px;height:60px;border-radius:10px;border:2px dashed var(--line);display:grid;place-items:center;font-family:var(--f-mono);font-weight:700;font-size:1.8rem;background:var(--deep)}
+.cslot.fill{border:2px solid var(--signal);color:var(--text);cursor:pointer}
+.tiles{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:18px;min-height:60px}
+.tile{width:48px;height:56px;border-radius:10px;border:1px solid var(--stain);background:color-mix(in srgb,var(--stain) 20%,var(--deep));font-family:var(--f-mono);font-weight:700;font-size:1.6rem;transition:transform .15s}
+.tile:hover{transform:translateY(-3px)}
+.tile:disabled{visibility:hidden}
+.redzone{margin-top:26px;border-top:1px dashed var(--line);padding-top:18px;display:grid;justify-items:center;gap:8px;text-align:center}
+.bigred{width:120px;height:120px;border-radius:50%;border:6px solid #5a1020;background:radial-gradient(circle at 38% 32%,#ff8a8a,#e0213b 55%,#8c0f22);color:#fff;font-family:var(--f-display);font-weight:800;font-size:.95rem;letter-spacing:.04em;line-height:1.1;box-shadow:0 10px 0 #5a1020,0 0 40px color-mix(in srgb,var(--bad) 60%,transparent);transition:transform .08s,box-shadow .08s;animation:tempt 2.2s infinite}
+.bigred:active{transform:translateY(8px);box-shadow:0 2px 0 #5a1020}
+@keyframes tempt{50%{box-shadow:0 10px 0 #5a1020,0 0 70px var(--bad)}}
+
+/* ---------- win ---------- */
+#win{padding-block:24px}
+.doors{position:fixed;inset:0;z-index:60;display:grid;grid-template-columns:1fr 1fr;pointer-events:none}
+.doors div{background:linear-gradient(90deg,var(--panel-2),var(--deep));border:1px solid var(--line);transition:transform 1.6s cubic-bezier(.7,0,.2,1) .5s;display:grid;align-items:center;font-family:var(--f-display);font-weight:800;font-size:clamp(2rem,8vw,5rem);color:var(--ok);text-shadow:0 0 30px var(--ok)}
+.doors div:first-child{justify-items:end;padding-right:12px}
+.doors div:last-child{justify-items:start;padding-left:12px;background:linear-gradient(270deg,var(--panel-2),var(--deep))}
+.doors.open div:first-child{transform:translateX(-101%)}
+.doors.open div:last-child{transform:translateX(101%)}
+.cert{position:relative;background:linear-gradient(160deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:18px;padding:clamp(20px,4vw,40px);overflow:hidden}
+.cert::before{content:"";position:absolute;inset:10px;border:1px solid color-mix(in srgb,var(--heat) 40%,transparent);border-radius:12px;pointer-events:none}
+.cert h2{font-size:clamp(2.2rem,6vw,4rem);font-weight:800;line-height:.95;text-transform:uppercase}
+.cert h2 span{color:var(--ok);text-shadow:0 0 30px color-mix(in srgb,var(--ok) 50%,transparent)}
+.cert .who{margin-top:14px;font-size:1.2rem}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:22px}
+.stat{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--deep)}
+.stat b{display:block;font-family:var(--f-mono);font-size:1.6rem;color:var(--heat)}
+.stat span{font-size:.85rem;color:var(--muted)}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.badge{border:1px solid var(--ok);color:var(--ok);border-radius:999px;padding:.3em .9em;font-family:var(--f-mono);font-size:.8rem;letter-spacing:.06em}
+.badge.miss{border-color:var(--line);color:var(--muted)}
+.glossary{margin-top:28px}
+.glossary h3{font-size:1.3rem}
+.gloss{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+.gloss div{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:color-mix(in srgb,var(--deep) 80%,transparent)}
+.gloss b{font-family:var(--f-display);color:var(--stain)}
+.gloss .sec b{color:var(--signal)}
+.gloss p{font-size:.9rem;margin-top:2px}
+
+/* ---------- modal / toast / flash ---------- */
+.modal{position:fixed;inset:0;z-index:50;background:color-mix(in srgb,var(--void) 75%,transparent);backdrop-filter:blur(6px);display:grid;place-items:center;padding:16px}
+.modal-card{position:relative;width:min(760px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;box-shadow:0 40px 100px -20px #000}
+.modal-card h2{font-size:1.6rem;padding-right:40px}
+.modal-x{position:absolute;right:14px;top:14px;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--deep);font-size:1.2rem;line-height:1}
+.termgrid{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.termgrid span{border:1px solid var(--line);border-radius:999px;padding:.3em .8em;font-size:.88rem;color:var(--muted)}
+.termgrid span.on{border-color:var(--stain);color:var(--text);background:color-mix(in srgb,var(--stain) 16%,transparent)}
+.jlist{display:grid;gap:10px;margin-top:16px}
+.gm-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:.92rem}
+.gm-table th,.gm-table td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}
+.gm-table th{font-family:var(--f-display);white-space:nowrap}
+.gm-scroll{overflow-x:auto}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:70;background:var(--panel-2);border:1px solid var(--line);border-radius:999px;padding:.6em 1.2em;font-weight:700;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;max-width:calc(100% - 32px);text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(-6px)}
+#flash{position:fixed;inset:0;z-index:65;display:grid;place-items:center;padding:16px;background:color-mix(in srgb,var(--bad) 30%,var(--void));animation:flashin .3s}
+#flash .fcard{max-width:520px;background:var(--panel);border:2px solid var(--bad);border-radius:16px;padding:24px;text-align:left}
+#flash h2{color:var(--bad);font-size:1.9rem}
+#flash p{margin-top:10px}
+@keyframes flashin{from{opacity:0}}
+
+/* ---------- responsive ---------- */
+@media (max-width:980px){
+  .intro-grid,.hub-grid,.room-grid{grid-template-columns:minmax(0,1fr)}
+  .notes{max-height:none}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .gloss{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:620px){
+  .team{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .resp{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .syn-wrap{grid-template-columns:minmax(0,1fr)}
+  .gloss{grid-template-columns:minmax(0,1fr)}
+  .slot{width:24px;height:32px;font-size:.95rem}
+  .code .lbl{display:none}
+  .timer{font-size:1.35rem}
+  .hud-actions{margin-left:0;width:100%}
+  #hud{position:relative;top:0}
+  .jack{padding:.45em .5em;font-size:.88rem}
+  .jack small{display:none}
+  .cslot,.tile{width:36px;height:46px;font-size:1.3rem}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  .lung{transition-duration:4s!important}
+}
+</style>
+</head>
+<body>
+
+<canvas id="net" aria-hidden="true"></canvas>
+<div class="app">
+  <!-- HUD -->
+  <header id="hud" hidden>
+    <div class="wrap hud-in">
+      <div class="brand">Neuro Lockdown<small id="hud-team">Team</small></div>
+      <div class="timer" id="timer" aria-live="off" title="Time left">30:00</div>
+      <div class="code" aria-label="Override code letters collected"><span class="eyebrow lbl">Code</span><span id="slots" class="code"></span></div>
+      <div class="hud-actions">
+        <button class="btn small ghost" data-act="map" id="btn-map">Brain map</button>
+        <button class="btn small ghost" data-act="journal">Field journal</button>
+        <button class="btn small ghost" data-act="sound" id="btn-sound" aria-pressed="true">Sound on</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- INTRO -->
+  <main id="intro" class="wrap">
+    <div class="intro-grid">
+      <section>
+        <p class="eyebrow">A brain escape room · Grades 7–8</p>
+        <h1 class="title"><span class="l1">Neuro</span><span class="l2">Lockdown</span></h1>
+        <p class="tagline">Nine sealed rooms. Eight letters. One brain to break out of.</p>
+        <p class="story" id="story" aria-live="polite"></p>
+        <form class="setup" id="setup" autocomplete="off">
+          <div class="field">
+            <label for="team">Team name</label>
+            <input type="text" id="team" maxlength="28" placeholder="The Neuron Ninjas">
+          </div>
+          <div class="field">
+            <span class="eyebrow" id="clock-lbl">Clock</span>
+            <div class="seg" role="radiogroup" aria-labelledby="clock-lbl" style="margin-top:6px">
+              <input type="radio" name="mins" id="m30" value="30" checked><label for="m30">30 min</label>
+              <input type="radio" name="mins" id="m45" value="45"><label for="m45">45 min</label>
+              <input type="radio" name="mins" id="m0" value="0"><label for="m0">No clock (study mode)</label>
+            </div>
+          </div>
+          <div class="intro-actions">
+            <button class="btn primary" type="submit" id="go">Enter the brain</button>
+            <button class="btn ghost" type="button" data-act="resume" id="resume" hidden>Resume saved game</button>
+          </div>
+        </form>
+        <div class="intro-foot">
+          <button class="linkbtn" data-act="gm">Game Master guide (answer key)</button>
+          <span>Works best with sound on. Headphones optional.</span>
+        </div>
+      </section>
+      <aside class="casefile" aria-label="Patient file">
+        <h2>Patient file #0729</h2>
+        <p class="pname">Maya R.</p>
+        <dl>
+          <dt>Age</dt><dd>13 · 7th grade</dd>
+          <dt>Time</dt><dd class="mono">10:47 PM, school night</dd>
+          <dt>Tomorrow</dt><dd>Science test, 8:15 AM</dd>
+          <dt>Status</dt><dd><span class="status-lock">BRAIN LOCKDOWN</span></dd>
+          <dt>Sealed</dt><dd>9 regions</dd>
+          <dt>Override</dt><dd>8-letter code, one letter per room</dd>
+        </dl>
+        <canvas class="mini-ecg" id="mini-ecg" aria-hidden="true"></canvas>
+        <div class="howto">
+          <p><b>Read the field notes.</b> Every answer is hidden in the science on the left side of each room.</p>
+          <p><b>Solve the console.</b> Each room you clear gives one letter of the override code.</p>
+          <p><b>Hints cost 30 seconds.</b> Use them when your team is stuck, not before.</p>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- HUB -->
+  <main id="hub" class="wrap" hidden>
+    <div class="hub-grid">
+      <section class="mapcard" aria-label="Brain map">
+        <span class="eyebrow">Left side view · front of head ←</span>
+        <svg id="brain" viewBox="0 0 640 490">
+          <defs>
+            <clipPath id="cereClip"><path d="M88,238 C80,160 130,92 210,64 C280,40 380,38 452,64 C530,92 574,160 568,240 C564,284 546,312 512,322 C488,328 462,326 446,334 C430,356 396,368 350,368 C290,368 226,360 196,338 C180,326 176,312 184,300 C160,298 140,300 120,292 C100,282 90,262 88,238 Z"/></clipPath>
+          </defs>
+          <!-- brainstem & cerebellum sit behind the cerebrum -->
+          <path class="stem" d="M366,330 C390,330 418,334 432,346 C430,380 422,414 416,454 C413,472 386,474 381,457 C376,420 370,388 356,356 Z"/>
+          <path class="cbl" d="M446,330 C470,318 522,312 550,328 C578,346 574,382 540,396 C506,410 460,404 434,388 C414,376 420,344 446,330 Z"/>
+          <path class="cbl-f" d="M440,352 C470,340 520,336 556,350 M436,370 C468,360 520,358 562,370 M446,386 C478,380 516,380 548,388"/>
+          <path class="cere" d="M88,238 C80,160 130,92 210,64 C280,40 380,38 452,64 C530,92 574,160 568,240 C564,284 546,312 512,322 C488,328 462,326 446,334 C430,356 396,368 350,368 C290,368 226,360 196,338 C180,326 176,312 184,300 C160,298 140,300 120,292 C100,282 90,262 88,238 Z"/>
+          <g clip-path="url(#cereClip)">
+            <path class="lobe frontal" d="M0,0 H320 C312,100 300,150 292,190 C286,215 282,240 286,272 L190,298 L0,320 Z"/>
+            <path class="lobe temporal" d="M184,300 C240,280 300,268 360,262 C400,258 430,248 452,232 C482,262 494,300 474,334 L474,490 L150,490 Z"/>
+            <g class="gyri">
+              <path d="M120,200 C140,170 170,150 200,140 M110,250 C140,230 170,226 200,214 M150,110 C180,100 210,96 240,100 M220,180 C240,160 262,140 282,130 M170,270 C200,256 230,250 262,246"/>
+              <path d="M350,80 C380,70 420,74 450,88 M340,120 C372,108 410,110 440,122 M476,110 C500,130 516,150 526,176 M470,170 C496,180 516,200 532,226 M430,200 C456,204 480,214 500,236 M500,262 C520,270 536,280 548,292"/>
+              <path d="M230,316 C270,304 320,300 370,300 M250,344 C300,332 360,330 420,322 M390,282 C420,280 444,276 466,270"/>
+            </g>
+          </g>
+          <path class="sulcus" d="M190,298 C240,280 300,268 360,262 C400,258 430,248 452,232"/>
+          <path class="sulcus" d="M318,46 C312,100 300,150 292,190 C286,215 282,240 286,270"/>
+          <!-- deep structures, x-ray view -->
+          <path class="ring" d="M244,236 C232,172 288,126 360,126 C430,126 476,168 468,224"/>
+          <ellipse class="deep" cx="362" cy="214" rx="36" ry="22"/>
+          <ellipse class="deep" cx="314" cy="250" rx="17" ry="10"/>
+          <path class="hippo" d="M282,306 C316,318 360,318 392,300 C412,288 418,268 406,254"/>
+          <ellipse class="deep" cx="268" cy="304" rx="14" ry="9" transform="rotate(-18 268 304)"/>
+          <g transform="translate(500 168)">
+            <circle class="neuron-soma" r="9"/>
+            <path class="neuron" d="M-9,0 L-26,-8 M-7,-6 L-16,-22 M0,-9 L6,-26 M8,-5 L24,-14 M9,3 L40,16 L58,14 M40,16 L50,30"/>
+          </g>
+          <text class="face-lbl" x="40" y="160">FRONT</text>
+          <text class="face-lbl" x="572" y="160">BACK</text>
+          <g id="markers"></g>
+        </svg>
+        <div class="maplegend">
+          <span><i style="background:var(--signal)"></i>Open room</span>
+          <span><i style="background:var(--ok)"></i>Cleared</span>
+          <span><i style="background:var(--muted)"></i>Sealed</span>
+          <span><i style="background:var(--heat)"></i>Exit</span>
+        </div>
+      </section>
+      <aside class="log">
+        <p class="eyebrow">Mission log</p>
+        <h2 id="log-title">Restore life support first</h2>
+        <p class="brief" id="log-brief">Maya's brainstem is failing. Nothing else in the brain can open until breathing and heartbeat are back online.</p>
+        <div class="progress" aria-hidden="true"><i id="prog"></i></div>
+        <ul class="rooms" id="roomlist"></ul>
+      </aside>
+    </div>
+  </main>
+
+  <!-- ROOM -->
+  <main id="room" class="wrap" hidden>
+    <div class="room-head">
+      <div>
+        <p class="eyebrow" id="r-eyebrow">Room</p>
+        <h2 id="r-title">Room</h2>
+        <p class="sub" id="r-sub"></p>
+      </div>
+      <button class="btn ghost small" data-act="map">← Back to brain map</button>
+    </div>
+    <div class="room-grid">
+      <article class="notes" id="r-notes" tabindex="0" aria-label="Field notes"></article>
+      <section class="console" id="r-console-wrap" aria-label="Puzzle console">
+        <div id="r-console"></div>
+        <div class="hintbar" id="r-hintbar">
+          <button class="btn small" data-act="hint" id="hint-btn">Get a hint</button>
+          <span class="cost" id="hint-cost"></span>
+        </div>
+        <ul class="hints" id="r-hints"></ul>
+      </section>
+    </div>
+  </main>
+
+  <!-- WIN -->
+  <main id="win" class="wrap" hidden>
+    <section class="cert" id="cert"></section>
+  </main>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <button class="modal-x" data-act="close" aria-label="Close">×</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+<div id="flash" hidden></div>
+<div id="toast" role="status"></div>
+
+<script>
+(() => {
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const fmt = s => { s = Math.max(0, Math.round(s)); return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); };
+const HINT_COST = 30, IMPULSE_COST = 15;
+
+/* ================= state & storage ================= */
+const SAVE_KEY = "neuro-lockdown-v1";
+const fresh = () => ({ team: "", minutes: 30, elapsed: 0, penalty: 0, solved: {}, hints: {}, impulse: 0, started: false, finished: false, finalTime: 0, sound: true, overtimeShown: false, gm: false });
+let S = fresh();
+const store = {
+  load() { try { return JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { return null; } },
+  save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} },
+  clear() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
+};
+
+/* ================= sound ================= */
+const Sound = (() => {
+  let ctx = null, master = null;
+  function ensure() {
+    if (!S.sound) return null;
+    if (!ctx) {
+      try { ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = 0.55; master.connect(ctx.destination); }
+      catch (e) { return null; }
+    }
+    if (ctx.state === "suspended") ctx.resume();
+    return ctx;
+  }
+  function tone(f, d = 0.15, type = "sine", g = 0.2, t0 = 0, slide) {
+    const c = ensure(); if (!c) return;
+    const t = c.currentTime + t0, o = c.createOscillator(), v = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + d);
+    v.gain.setValueAtTime(0.0001, t); v.gain.linearRampToValueAtTime(g, t + 0.012); v.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(v); v.connect(master); o.start(t); o.stop(t + d + 0.05);
+  }
+  function noise() {
+    const c = ensure(); if (!c) return null;
+    const buf = c.createBuffer(1, c.sampleRate * 2, c.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const src = c.createBufferSource(); src.buffer = buf; src.loop = true;
+    const bp = c.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 1800; bp.Q.value = 0.6;
+    const g = c.createGain(); g.gain.value = 0;
+    src.connect(bp); bp.connect(g); g.connect(master); src.start();
+    return { set(v) { g.gain.setTargetAtTime(v, c.currentTime, 0.05); }, stop() { try { src.stop(); } catch (e) {} } };
+  }
+  return {
+    ensure, tone, noise,
+    click() { tone(720, 0.05, "triangle", 0.07); },
+    good() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.24, "triangle", 0.13, i * 0.08)); },
+    bad() { tone(160, 0.32, "sawtooth", 0.07, 0, 80); },
+    letter() { [784, 988, 1175, 1568, 2093].forEach((f, i) => tone(f, 0.45, "sine", 0.11, i * 0.07)); },
+    beat() { tone(62, 0.16, "sine", 0.6); tone(54, 0.16, "sine", 0.45, 0.19); },
+    alarm(g = 0.04) { tone(880, 0.17, "square", g); tone(640, 0.17, "square", g, 0.2); },
+    orb(i) { tone([262, 330, 392, 523][i], 0.4, "triangle", 0.18); },
+    chime() { tone(1318, 0.9, "sine", 0.08); tone(1976, 0.9, "sine", 0.04, 0.05); },
+    win() { [392, 523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.5, "triangle", 0.12, i * 0.11)); tone(131, 1.6, "sine", 0.2, 0.66); },
+    mute() { if (ctx) ctx.suspend(); }
+  };
+})();
+
+function speak(text) {
+  if (!S.sound || !("speechSynthesis" in window)) return;
+  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate = 0.98; u.pitch = 0.9; speechSynthesis.speak(u); } catch (e) {}
+}
+function hush() { try { if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch (e) {} }
+
+/* ================= glossary (the 18 project terms) ================= */
+const TERMS = [
+  ["Frontal lobe", "Behind your forehead. Plans, decides, focuses and controls impulses.", 1],
+  ["Temporal lobes", "Above your ears. Hearing, understanding language, memory and recognizing faces.", 1],
+  ["Brainstem", "Connects brain to spinal cord. Runs breathing, heartbeat and alertness automatically.", 1],
+  ["Limbic system", "A ring of deep structures that handle emotion, memory and motivation together.", 1],
+  ["Thalamus", "The relay station. Sorts signals from every sense except smell and sends them on.", 1],
+  ["Hypothalamus", "The thermostat. Keeps temperature, hunger, thirst, sleep and stress in balance.", 1],
+  ["Hippocampus", "The seahorse. Turns short-term memories into long-term ones, especially during sleep.", 1],
+  ["Amygdala", "The almond-shaped alarm. Detects threats and triggers fight, flight or freeze.", 1],
+  ["Neurotransmitters", "Chemical messengers that carry signals across the synapse between neurons.", 1],
+  ["Dopamine", "Reward and motivation: the \"let's do that again\" messenger. Also helps movement.", 1],
+  ["Serotonin", "Steadies mood, sleep and appetite. Most of it is made in your gut.", 1],
+  ["GABA", "The brain's brakes. Slows neurons down so you can feel calm and fall asleep.", 1],
+  ["Water", "About 75% of brain tissue. Even mild dehydration hurts focus and memory.", 0],
+  ["Stress", "The body's alarm response. A little helps you focus; too much blocks thinking.", 0],
+  ["Mindfulness", "Paying attention to the present on purpose. Slow breathing calms the alarm.", 0],
+  ["Memory", "Storing and recalling information. Built by sleep, practice and caring about it.", 0],
+  ["Oxygen", "The brain is 2% of body weight but uses about 20% of the oxygen you breathe.", 0],
+  ["Glucose", "A simple sugar from food, carried in the blood. The brain's main fuel.", 0]
+];
+
+/* ================= rooms ================= */
+const GL = { // tiny line icons for the map markers
+  lock: "M-4,-1 v-3 a4,4 0 0 1 8,0 v3 M-6,-1 h12 v8 h-12 z",
+  open: "M-5,0 a5,5 0 1 0 10,0 a5,5 0 1 0 -10,0",
+  exit: "M-5,-6 h10 v12 h-10 z M1,0 h0.5"
+};
+
+const ROOMS = [
+{
+  id: "brainstem", name: "Brainstem", title: "Life Support", letter: "L",
+  x: 399, y: 418, lx: 22, ly: 5, anchor: "start",
+  sub: "The brain's autopilot is failing. Breathing and heartbeat are offline.",
+  terms: ["Brainstem", "Oxygen", "Glucose", "Water"],
+  notes: `
+    <p class="lead">The <span class="term">brainstem</span> is the oldest part of your brain. It sits at the base of your skull and connects your brain to your spinal cord.</p>
+    <h4>What it runs, automatically</h4>
+    <ul><li>Breathing</li><li>Heartbeat and blood pressure</li><li>Swallowing, coughing and sneezing</li><li>Waking up and staying alert</li></ul>
+    <p>It has three parts: the midbrain, the pons and the medulla. You never have to remember to breathe, because the brainstem does it for you, even while you sleep.</p>
+    <h4>Supply report</h4>
+    <dl>
+      <dt>Oxygen</dt><dd>Your brain is only about <b>2%</b> of your body weight, but it uses about <b>20%</b> of the <span class="term">oxygen</span> you breathe.</dd>
+      <dt>Glucose</dt><dd><span class="term">Glucose</span> is a simple sugar from food, carried in your blood. It is the brain's <b>main fuel</b>. Neurons can't store much of it, so they need a steady supply. That's why skipping breakfast can make it hard to focus.</dd>
+      <dt>Water</dt><dd>Brain tissue is about <b>75%</b> <span class="term">water</span>. Even mild dehydration can make it harder to pay attention and remember.</dd>
+    </dl>
+    <div class="mission"><b>Mission</b>Set the three supply lines to match the supply report, then restart life support.</div>`,
+  hints: ["Every number you need is in the Supply report in the field notes.", "The brain uses far more oxygen than its size suggests: it's 2% of your weight but uses one-fifth of your oxygen.", "Oxygen 20%. Water 75%. Fuel: glucose."],
+  fact: "Your brainstem keeps you breathing about 20,000 times a day without a single thought from you.",
+  answer: "Oxygen slider 20%, water slider 75%, fuel = Glucose.",
+  build(c, solve) {
+    c.innerHTML = `
+      <h3>Life support console</h3>
+      <div class="monitor" style="margin-top:10px">
+        <canvas class="ecg" id="ecg"></canvas>
+        <div class="vitals"><span>HEART <b id="v-hr">--</b> bpm</span><span>BREATHS <b id="v-br">--</b>/min</span><span class="sys" id="v-sys">SYSTEM OFFLINE</span></div>
+      </div>
+      <div class="sliders">
+        <div class="sl"><label for="bs-o2">Oxygen supply <output id="o-o2">5%</output></label><small>Share of the body's oxygen sent to the brain</small><input type="range" id="bs-o2" min="0" max="50" step="1" value="5"></div>
+        <div class="sl"><label for="bs-h2o">Water level <output id="o-h2o">40%</output></label><small>How much of brain tissue is water</small><input type="range" id="bs-h2o" min="0" max="100" step="5" value="40"></div>
+        <fieldset class="sl"><legend>Main fuel line</legend>
+          <div class="chips" id="fuel">
+            ${["Protein", "Caffeine", "Glucose", "Salt"].map(f => `<button type="button" class="chip" aria-pressed="false" data-f="${f}">${f}</button>`).join("")}
+          </div>
+        </fieldset>
+      </div>
+      <div class="row" style="margin-top:18px"><button class="btn primary" id="bs-go">Restart life support</button></div>
+      <p class="feedback" id="bs-fb" aria-live="polite"></p>`;
+    const o2 = $("#bs-o2", c), h2o = $("#bs-h2o", c), fb = $("#bs-fb", c);
+    let fuel = null, alive = false, raf, beatT = 0, lastBeat = 0;
+    o2.oninput = () => $("#o-o2", c).textContent = o2.value + "%";
+    h2o.oninput = () => $("#o-h2o", c).textContent = h2o.value + "%";
+    $("#fuel", c).onclick = e => { const b = e.target.closest(".chip"); if (!b) return; Sound.click(); fuel = b.dataset.f; $$(".chip", c).forEach(x => x.setAttribute("aria-pressed", x === b)); };
+    $("#bs-go", c).onclick = () => {
+      const ok = [+o2.value === 20, +h2o.value === 75, fuel === "Glucose"];
+      const n = ok.filter(Boolean).length;
+      if (n === 3) {
+        alive = true; Sound.good();
+        fb.className = "feedback good"; fb.textContent = "Life support restored. Maya is breathing steadily.";
+        $("#v-sys", c).textContent = "SYSTEMS ONLINE"; $("#v-sys", c).classList.add("ok");
+        $("#v-hr", c).textContent = "68"; $("#v-br", c).textContent = "14";
+        [o2, h2o].forEach(x => x.disabled = true);
+        setTimeout(solve, 2600);
+      } else {
+        Sound.bad(); fb.className = "feedback badf";
+        fb.textContent = n === 0 ? "No systems responded. Check the supply report." : `${n} of 3 supply lines are correct. The monitor is still flat.`;
+        c.parentElement.classList.remove("shake"); void c.offsetWidth; c.parentElement.classList.add("shake");
+      }
+    };
+    // ECG trace
+    const cv = $("#ecg", c), g = cv.getContext("2d"); let W, H, x = 0, prevY;
+    const size = () => { const r = cv.getBoundingClientRect(), d = devicePixelRatio || 1; W = cv.width = r.width * d; H = cv.height = r.height * d; g.fillStyle = "#02060f"; g.fillRect(0, 0, W, H); x = 0; prevY = H / 2; };
+    size(); const ro = new ResizeObserver(size); ro.observe(cv);
+    const pqrst = t => { // t in 0..1 of a beat
+      if (t < .08) return -Math.sin(t / .08 * Math.PI) * .08;
+      if (t < .16) return 0;
+      if (t < .19) return (t - .16) / .03 * .12;
+      if (t < .22) return .12 - (t - .19) / .03 * 1.1;
+      if (t < .25) return -.98 + (t - .22) / .03 * 1.28;
+      if (t < .28) return .3 - (t - .25) / .03 * .3;
+      if (t < .45) return 0;
+      if (t < .6) return -Math.sin((t - .45) / .15 * Math.PI) * .2;
+      return 0;
+    };
+    let last = performance.now();
+    const step = now => {
+      const dt = Math.min(50, now - last); last = now;
+      const d = devicePixelRatio || 1, speed = 0.12 * d * dt;
+      g.shadowBlur = 0; g.fillStyle = "#02060f"; g.fillRect(x, 0, 18 * d, H);
+      let y;
+      if (alive) { beatT += dt / 880; if (beatT >= 1) { beatT -= 1; Sound.beat(); } y = H / 2 + pqrst(beatT) * H * .42; }
+      else y = H / 2 + (Math.random() - .5) * 3 * d;
+      g.strokeStyle = alive ? "#57efa2" : "#ff6363"; g.lineWidth = 2 * d; g.shadowColor = g.strokeStyle; g.shadowBlur = 8 * d;
+      g.beginPath(); g.moveTo(x, prevY); x += speed; g.lineTo(x, y); g.stroke(); prevY = y;
+      if (x > W) { x = 0; }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
+  }
+},
+{
+  id: "thalamus", name: "Thalamus", title: "The Relay Station", letter: "E",
+  x: 362, y: 214, lx: 24, ly: -12, anchor: "start",
+  sub: "Signals from the senses are piling up with nowhere to go.",
+  terms: ["Thalamus"],
+  notes: `
+    <p class="lead">The <span class="term">thalamus</span> is a pair of egg-shaped structures right in the middle of your brain. It is the brain's <b>relay station</b>, like a switchboard operator.</p>
+    <ul><li>Almost every signal from your senses stops at the thalamus first. It sorts the signal and sends it to the right part of the brain's outer layer, the cortex.</li><li>It also helps control how awake and alert you feel.</li></ul>
+    <h4>Where signals go</h4>
+    <dl>
+      <dt>Occipital lobe</dt><dd>At the back of your head. Handles <b>vision</b>.</dd>
+      <dt>Parietal lobe</dt><dd>On top, behind the frontal lobe. Handles <b>touch</b>, pain, temperature and body position.</dd>
+      <dt>Temporal lobes</dt><dd>On the sides, by your ears. Handle <b>hearing</b>.</dd>
+      <dt>Insula</dt><dd>Tucked deep inside a fold of the cortex. Handles <b>taste</b>.</dd>
+    </dl>
+    <h4>The one exception</h4>
+    <p><b>Smell skips the thalamus.</b> Smell signals travel from your nose to the <b>olfactory bulb</b>, then straight to areas wired to the amygdala and hippocampus. That's why a smell can bring back a memory or feeling instantly.</p>
+    <div class="mission"><b>Mission</b>Click a sense on the left, then click where its signal should go on the right. Wire all five, then test the relay.</div>`,
+  hints: ["Read 'Where signals go' in the notes. Each area handles one sense.", "One sense is different. It doesn't stop at the thalamus at all.", "Sight → Occipital, Sound → Temporal, Touch → Parietal, Taste → Insula, Smell → Olfactory bulb."],
+  fact: "Smell is the only sense that skips the thalamus. That shortcut is why smells trigger memories so fast.",
+  answer: "Sight → Occipital lobe; Sound → Temporal lobe; Touch → Parietal lobe; Taste → Insula; Smell → Olfactory bulb (direct line).",
+  build(c, solve) {
+    const SIG = [["sight", "Sight", "from the eyes", "#4fe3ff"], ["sound", "Sound", "from the ears", "#ffb547"], ["touch", "Touch", "from the skin", "#57efa2"], ["taste", "Taste", "from the tongue", "#c792ff"], ["smell", "Smell", "from the nose", "#ff4fa3"]];
+    const DST = [["parietal", "Parietal lobe", "top of the brain"], ["bulb", "Olfactory bulb", "direct line, no relay"], ["occipital", "Occipital lobe", "back of the brain"], ["insula", "Insula", "deep fold"], ["temporal", "Temporal lobe", "by the ears"]];
+    const KEY = { sight: "occipital", sound: "temporal", touch: "parietal", taste: "insula", smell: "bulb" };
+    c.innerHTML = `
+      <h3>Sensory switchboard</h3>
+      <div class="board" id="board">
+        <svg class="cables" id="cables"></svg>
+        <div class="jacks in">${SIG.map(s => `<button class="jack" data-s="${s[0]}" style="--c:${s[3]}"><span class="pin"></span><span>${s[1]}<small>${s[2]}</small></span></button>`).join("")}</div>
+        <div class="core" id="core">THALAMUS<br>RELAY</div>
+        <div class="jacks out">${DST.map(d => `<button class="jack" data-d="${d[0]}"><span class="pin"></span><span>${d[1]}<small>${d[2]}</small></span></button>`).join("")}</div>
+      </div>
+      <div class="row" style="margin-top:18px"><button class="btn primary" id="th-go">Test the relay</button><button class="btn ghost small" id="th-clr">Clear wires</button></div>
+      <p class="feedback" id="th-fb" aria-live="polite"></p>`;
+    const board = $("#board", c), svg = $("#cables", c), fb = $("#th-fb", c);
+    const conn = {}; let armed = null, done = false;
+    const col = Object.fromEntries(SIG.map(s => [s[0], s[3]]));
+    function draw(flow) {
+      const br = board.getBoundingClientRect(), core = $("#core", c).getBoundingClientRect();
+      const cx = core.left + core.width / 2 - br.left, cy = core.top + core.height / 2 - br.top;
+      svg.innerHTML = Object.entries(conn).map(([s, d]) => {
+        const a = $(`[data-s="${s}"] .pin`, c).getBoundingClientRect(), b = $(`[data-d="${d}"] .pin`, c).getBoundingClientRect();
+        const x1 = a.left + a.width / 2 - br.left, y1 = a.top + a.height / 2 - br.top, x2 = b.left + b.width / 2 - br.left, y2 = b.top + b.height / 2 - br.top;
+        const viaX = d === "bulb" ? (x1 + x2) / 2 : cx, viaY = d === "bulb" ? Math.min(y1, y2) - 30 : cy;
+        return `<path class="cable ${flow ? "flow" : ""}" stroke="${col[s]}" d="M${x1},${y1} Q${viaX},${viaY} ${x2},${y2}"/>`;
+      }).join("");
+      $$(".jack", c).forEach(j => { j.classList.remove("wired"); j.style.removeProperty("--c"); });
+      Object.entries(conn).forEach(([s, d]) => { const js = $(`[data-s="${s}"]`, c), jd = $(`[data-d="${d}"]`, c); js.classList.add("wired"); js.style.setProperty("--c", col[s]); jd.classList.add("wired"); jd.style.setProperty("--c", col[s]); });
+    }
+    board.onclick = e => {
+      if (done) return;
+      const j = e.target.closest(".jack"); if (!j) return; Sound.click();
+      if (j.dataset.s) { armed = j.dataset.s; $$(".jack", c).forEach(x => x.classList.toggle("armed", x === j)); fb.className = "feedback"; fb.textContent = `Where should ${j.textContent.replace(/from.*/, "").trim().toLowerCase()} go?`; }
+      else if (armed) {
+        for (const k in conn) if (conn[k] === j.dataset.d) delete conn[k];
+        conn[armed] = j.dataset.d; armed = null; $$(".jack", c).forEach(x => x.classList.remove("armed")); fb.textContent = ""; draw();
+      } else { fb.className = "feedback"; fb.textContent = "Pick a sense on the left first."; }
+    };
+    $("#th-clr", c).onclick = () => { if (done) return; for (const k in conn) delete conn[k]; draw(); fb.textContent = ""; };
+    $("#th-go", c).onclick = () => {
+      if (done) return;
+      const n = Object.keys(KEY).filter(k => conn[k] === KEY[k]).length, wired = Object.keys(conn).length;
+      if (n === 5) {
+        done = true; Sound.good(); draw(true); $("#core", c).classList.add("live");
+        fb.className = "feedback good"; fb.textContent = "All five signals arrived. Maya can see, hear, feel, taste and smell again.";
+        setTimeout(solve, 2400);
+      } else {
+        Sound.bad(); fb.className = "feedback badf";
+        fb.textContent = wired < 5 ? `Only ${wired} of 5 senses are wired. Connect them all first.` : `${n} of 5 signals reached the right place.`;
+      }
+    };
+    const ro = new ResizeObserver(() => draw(done)); ro.observe(board);
+    return () => ro.disconnect();
+  }
+},
+{
+  id: "hypothalamus", name: "Hypothalamus", title: "The Thermostat", letter: "A",
+  x: 314, y: 250, lx: -24, ly: 5, anchor: "end",
+  sub: "Every body system is out of balance, and alerts are stacking up.",
+  terms: ["Hypothalamus", "Water", "Glucose", "Stress"],
+  notes: `
+    <p class="lead">The <span class="term">hypothalamus</span> is about the size of an almond and sits just below the thalamus. <i>Hypo</i> means "below." It is the body's <b>thermostat and control tower</b>.</p>
+    <p>Its big job is <b>homeostasis</b>: keeping your body balanced, no matter what's happening outside.</p>
+    <h4>How it restores balance</h4>
+    <dl>
+      <dt>Temperature</dt><dd>Too hot? It makes you <b>sweat</b> so you cool off. Too cold? It makes you <b>shiver</b> so your muscles make heat.</dd>
+      <dt>Water</dt><dd>When you're low on water and your blood gets too salty, it makes you feel <b>thirsty</b>.</dd>
+      <dt>Food</dt><dd>When blood <span class="term">glucose</span> drops, it switches on <b>hunger</b>.</dd>
+      <dt>Sleep</dt><dd>Its built-in body clock makes you <b>sleepy</b> when it gets dark at night.</dd>
+      <dt>Stress</dt><dd>When the amygdala senses danger, the hypothalamus signals the pituitary and adrenal glands to release <b>stress hormones</b> like cortisol and adrenaline.</dd>
+    </dl>
+    <div class="mission"><b>Mission</b>Each alert shows a body out of balance. Pick the response the hypothalamus would trigger to fix it.</div>`,
+  hints: ["Each alert is a balance problem. Ask: what would bring the body back to normal?", "Too hot → cool down. Too cold → make heat. Low water → want water.", "Hot → Sweat · Cold → Shiver · Salty blood → Thirst · Low glucose → Hunger · Night → Sleepiness · Pop quiz → Stress hormones."],
+  fact: "The hypothalamus is about the size of an almond, yet it helps control temperature, hunger, thirst, sleep and stress.",
+  answer: "Hot → Sweat; Cold → Shiver; Salty blood → Thirst; Low glucose → Hunger; Late night → Sleepiness; Pop quiz → Stress hormones.",
+  build(c, solve) {
+    const R = [["sweat", "Sweat", "cool the skin"], ["shiver", "Shiver", "make heat"], ["thirst", "Thirst", "want water"], ["hunger", "Hunger", "want food"], ["sleep", "Sleepiness", "wind down"], ["stress", "Stress hormones", "cortisol, adrenaline"]];
+    const A = shuffle([
+      ["Body temperature 38.4 °C and climbing after running laps in gym class.", "sweat", 92],
+      ["Body temperature 35.9 °C. Maya is waiting for the bus in the snow.", "shiver", 12],
+      ["Water level low. Blood is getting too salty.", "thirst", 80],
+      ["Blood glucose dropping. Last meal was 6 hours ago.", "hunger", 18],
+      ["10:30 PM. The room is dark. The body clock says: night.", "sleep", 75],
+      ["\"Pop quiz, everyone!\" The amygdala just sent a danger signal.", "stress", 88]
+    ]);
+    c.innerHTML = `
+      <h3>Homeostasis control tower</h3>
+      <div class="alertcard"><div class="thermo" id="hy-th"><i></i></div><div><span class="tag" id="hy-tag"></span><p id="hy-q" aria-live="polite"></p></div></div>
+      <div class="resp" id="hy-r">${R.map(r => `<button data-r="${r[0]}">${r[1]}<small>${r[2]}</small></button>`).join("")}</div>
+      <div class="pips" id="hy-p">${A.map(() => "<i></i>").join("")}</div>
+      <p class="feedback" id="hy-fb" aria-live="polite"></p>`;
+    let i = 0, lock = false; const fb = $("#hy-fb", c), th = $("#hy-th", c);
+    const show = () => { $("#hy-tag", c).textContent = `ALERT ${i + 1} OF ${A.length}`; $("#hy-q", c).textContent = A[i][0]; th.classList.remove("okk"); th.style.setProperty("--lvl", A[i][2] + "%"); };
+    show();
+    $("#hy-r", c).onclick = e => {
+      const b = e.target.closest("button"); if (!b || lock) return;
+      if (b.dataset.r === A[i][1]) {
+        lock = true; Sound.good(); th.classList.add("okk"); $$("#hy-p i", c)[i].classList.add("on");
+        fb.className = "feedback good"; fb.textContent = "Balance restored.";
+        setTimeout(() => { i++; lock = false; fb.textContent = ""; if (i === A.length) { $("#hy-q", c).textContent = "All systems balanced. Homeostasis achieved."; $("#hy-tag", c).textContent = "ALL CLEAR"; solve(); } else show(); }, 900);
+      } else {
+        Sound.bad(); fb.className = "feedback badf";
+        fb.textContent = `${b.firstChild.textContent} won't fix this one. What does the body need to get back to normal?`;
+      }
+    };
+  }
+},
+{
+  id: "amygdala", name: "Amygdala", title: "The Alarm Room", letter: "R",
+  x: 262, y: 304, lx: -22, ly: 5, anchor: "end",
+  sub: "Stress alarm at 100%. Nobody can think in here.",
+  terms: ["Amygdala", "Stress", "Mindfulness"],
+  notes: `
+    <p class="lead">The <span class="term">amygdala</span> <span class="pron">(uh-MIG-duh-luh)</span> is named after the Greek word for <b>almond</b>, because of its shape. You have two, one deep inside each temporal lobe.</p>
+    <ul><li>It's your brain's <b>alarm system</b>. It spots danger and triggers fear and other strong emotions.</li><li>It fires the <b>fight, flight or freeze</b> response: your heart pounds, breathing speeds up and muscles tense.</li></ul>
+    <h4>Stress at school</h4>
+    <p>A little <span class="term">stress</span> can help you focus. Too much, and the alarm gets so loud that your frontal lobe, the thinking part, has trouble doing its job. That's why your mind can go blank during a test even when you studied.</p>
+    <h4>Mindfulness</h4>
+    <p><span class="term">Mindfulness</span> means paying attention to the present moment on purpose, without judging it. Slow breathing, especially a long, slow breath out, switches on your body's calming system and helps quiet the alarm. People who practice mindfulness regularly often react less strongly to stress.</p>
+    <div class="mission"><b>Mission</b>Take three slow breaths. Hold the button while you breathe in for about 4 seconds. Let go and breathe out for about 4 seconds.</div>`,
+  hints: ["Press and hold the button while you breathe in. Let go while you breathe out.", "Go slowly. Count 1-2-3-4 while holding, then 1-2-3-4 after you let go.", "Three slow breaths in a row turn off the alarm. On a keyboard, hold the Space bar."],
+  fact: "Slow breathing is a remote control for your nervous system. A long breath out helps switch off the stress alarm.",
+  answer: "Hold the breathe button ~4 s (3–8 s counts), release and wait ~4 s. Repeat 3 times.",
+  build(c, solve) {
+    c.innerHTML = `
+      <h3>Stress alarm override</h3>
+      <div class="stressbar" style="margin-top:10px"><span>STRESS</span><div class="bar"><i id="am-bar"></i></div><b id="am-pct">100%</b></div>
+      <div class="breathe-stage"><div class="guide-ring"></div><div class="lung" id="am-lung"></div></div><p class="cue" id="am-cue">Ready<small>Press and hold to breathe in</small></p>
+      <button class="breathe-btn" id="am-btn">Hold to breathe in</button>
+      <div class="cycles" id="am-cy"><i></i><i></i><i></i></div>
+      <p class="feedback" id="am-fb" aria-live="polite" style="text-align:center"></p>`;
+    const wrap = c.closest(".console"), btn = $("#am-btn", c), lung = $("#am-lung", c), cue = $("#am-cue", c), fb = $("#am-fb", c);
+    let phase = "ready", t0 = 0, count = 0, stress = 100, exT = null, done = false, raf;
+    const setStress = v => { stress = v; $("#am-bar", c).style.width = v + "%"; $("#am-pct", c).textContent = v + "%"; wrap.style.setProperty("--alarm", (v / 100).toFixed(2)); };
+    setStress(100);
+    const siren = setInterval(() => { if (stress > 0 && !done) Sound.alarm(0.012 + stress / 100 * 0.03); }, 2600);
+    const setCue = (a, b) => cue.innerHTML = `${a}<small>${b}</small>`;
+    const tick = () => {
+      const s = (performance.now() - t0) / 1000;
+      if (phase === "in") setCue(`Breathe in… ${Math.min(8, Math.floor(s) + 1)}`, s < 3 ? "keep holding" : "let go whenever you're full");
+      if (phase === "out") setCue(`Breathe out… ${Math.min(4, Math.floor(s) + 1)}`, "slowly, all the way");
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    const press = () => {
+      if (done || phase === "in") return;
+      if (phase === "out") { clearTimeout(exT); fb.className = "feedback badf"; fb.textContent = "Too quick. Let the breath out a little longer before the next one."; }
+      else fb.textContent = "";
+      phase = "in"; t0 = performance.now(); lung.classList.add("in"); btn.classList.add("hold"); btn.textContent = "Breathing in…";
+    };
+    const release = () => {
+      if (done || phase !== "in") return;
+      const d = (performance.now() - t0) / 1000;
+      lung.classList.remove("in"); btn.classList.remove("hold"); btn.textContent = "Hold to breathe in";
+      if (d < 3) { phase = "ready"; setCue("Too fast", "Breathe in slowly for about 4 seconds"); fb.className = "feedback badf"; fb.textContent = "That breath was too short. Slow it down."; Sound.bad(); return; }
+      if (d > 8.5) { phase = "ready"; setCue("Let it go", "Don't hold it too long, just a slow 4 count"); return; }
+      phase = "out"; t0 = performance.now();
+      exT = setTimeout(() => {
+        if (phase !== "out") return;
+        phase = "ready"; count++; Sound.chime(); fb.className = "feedback good"; fb.textContent = count < 3 ? "Nice and slow. The alarm is quieting down." : "";
+        $$("#am-cy i", c)[count - 1].classList.add("on"); setStress(Math.max(0, 100 - count * 34));
+        setCue(count < 3 ? "Good breath" : "Calm", count < 3 ? "Press and hold for the next one" : "The alarm is off");
+        if (count >= 3) { done = true; btn.disabled = true; btn.textContent = "Alarm off"; fb.className = "feedback good"; fb.textContent = "Stress 0%. The frontal lobe can think again."; setTimeout(solve, 1800); }
+      }, 3500);
+    };
+    btn.addEventListener("pointerdown", e => { e.preventDefault(); btn.setPointerCapture?.(e.pointerId); press(); });
+    ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => btn.addEventListener(ev, release));
+    btn.addEventListener("contextmenu", e => e.preventDefault());
+    const mine = () => { const el = document.activeElement; return !el || el === document.body || el === btn; };
+    const kd = e => { if (e.code === "Space" && !e.repeat && mine() && $("#modal").hidden) { e.preventDefault(); press(); } };
+    const ku = e => { if (e.code === "Space" && phase === "in") { e.preventDefault(); release(); } };
+    addEventListener("keydown", kd); addEventListener("keyup", ku);
+    return () => { clearInterval(siren); clearTimeout(exT); cancelAnimationFrame(raf); removeEventListener("keydown", kd); removeEventListener("keyup", ku); wrap.style.setProperty("--alarm", 0); };
+  }
+},
+{
+  id: "hippocampus", name: "Hippocampus", title: "The Memory Vault", letter: "N",
+  x: 408, y: 298, lx: 22, ly: 5, anchor: "start",
+  sub: "Tonight's studying is about to be lost. Save it to long-term memory.",
+  terms: ["Hippocampus", "Memory"],
+  notes: `
+    <p class="lead"><span class="term">Hippocampus</span> is Greek for <b>seahorse</b>, because it's curled like one. You have two, one inside each temporal lobe.</p>
+    <ul><li>It turns <b>short-term memories into long-term memories</b>.</li><li>It helps you remember facts and events from your life.</li><li>It helps you find your way around, like remembering the route to a new classroom.</li></ul>
+    <h4>Memory boosters</h4>
+    <dl>
+      <dt>Sleep</dt><dd>While you sleep, the hippocampus replays what you learned that day and helps store it for good.</dd>
+      <dt>Practice</dt><dd>Quizzing yourself builds stronger <span class="term">memory</span> than rereading your notes.</dd>
+      <dt>Water</dt><dd>A hydrated, well-fed brain remembers better.</dd>
+      <dt>Calm</dt><dd>Stress that lasts a long time floods the brain with cortisol, which can harm the hippocampus and make remembering harder.</dd>
+    </dl>
+    <div class="mission"><b>Mission</b>Watch the memory pattern, then repeat it. Survive three rounds to lock the memories in.</div>`,
+  hints: ["Watch the whole pattern before you click. Saying the words out loud helps.", "Chunk it: group the pattern into pairs, like a phone number.", "If you miss, the same pattern replays. You never lose progress."],
+  fact: "London taxi drivers who memorized thousands of streets had a larger back part of the hippocampus. Practice changes your brain.",
+  answer: "Simon-style memory game: repeat the lit-up sequence for rounds of 3, 4 and 5. The sequence is random each time.",
+  build(c, solve) {
+    const O = [["Sleep", "#c792ff", `<path d="M20 4a14 14 0 1 0 14 18A11 11 0 0 1 20 4z"/>`], ["Practice", "#4fe3ff", `<path d="M6 8h22l6 6v20H6z"/><path d="M11 18h14M11 24h14M11 30h8"/>`], ["Water", "#57efa2", `<path d="M20 4c7 9 11 15 11 21a11 11 0 0 1-22 0c0-6 4-12 11-21z"/>`], ["Calm", "#ffb547", `<circle cx="20" cy="20" r="6"/><circle cx="20" cy="20" r="13"/>`]];
+    c.innerHTML = `
+      <h3>Memory consolidation</h3>
+      <div class="orbs" id="hp-o">${O.map((o, i) => `<button class="orb" data-i="${i}" style="--c:${o[1]}" disabled><svg viewBox="0 0 40 40" aria-hidden="true">${o[2]}</svg>${o[0]}</button>`).join("")}</div>
+      <p class="mem-status" id="hp-s">Round 0 of 3</p>
+      <div class="row" style="justify-content:center;margin-top:12px"><button class="btn primary" id="hp-go">Start memory scan</button></div>
+      <p class="feedback" id="hp-fb" aria-live="polite" style="text-align:center"></p>`;
+    const seq = Array.from({ length: 5 }, () => Math.floor(Math.random() * 4));
+    const lens = [3, 4, 5]; let round = 0, pos = 0, listening = false, timers = [];
+    const orbs = $$(".orb", c), fb = $("#hp-fb", c), st = $("#hp-s", c), go = $("#hp-go", c);
+    const flash = (i, ms = 420) => { orbs[i].classList.add("lit"); Sound.orb(i); timers.push(setTimeout(() => orbs[i].classList.remove("lit"), ms)); };
+    const play = () => {
+      listening = false; orbs.forEach(o => o.disabled = true); go.disabled = true; pos = 0;
+      st.textContent = `Round ${round + 1} of 3 · watch`;
+      const n = lens[round];
+      for (let k = 0; k < n; k++) timers.push(setTimeout(() => flash(seq[k]), 700 + k * 720));
+      timers.push(setTimeout(() => { listening = true; orbs.forEach(o => o.disabled = false); st.textContent = `Round ${round + 1} of 3 · your turn`; orbs[0].focus({ preventScroll: true }); }, 700 + n * 720));
+    };
+    go.onclick = () => { fb.textContent = ""; play(); };
+    $("#hp-o", c).onclick = e => {
+      const b = e.target.closest(".orb"); if (!b || !listening) return;
+      const i = +b.dataset.i; flash(i, 250);
+      if (i !== seq[pos]) {
+        listening = false; orbs.forEach(o => o.disabled = true); Sound.bad(); fb.className = "feedback badf"; fb.textContent = "Memory slipped. Watch the same pattern again.";
+        timers.push(setTimeout(play, 1300)); return;
+      }
+      pos++;
+      if (pos === lens[round]) {
+        listening = false; round++; fb.className = "feedback good"; orbs.forEach(o => o.disabled = true);
+        if (round === 3) { st.textContent = "Round 3 of 3 · stored"; fb.textContent = "Memories saved to long-term storage."; orbs.forEach(o => o.disabled = true); timers.push(setTimeout(() => { Sound.good(); solve(); }, 900)); }
+        else { fb.textContent = "Stored. Next pattern is longer."; timers.push(setTimeout(play, 1400)); }
+      }
+    };
+    return () => timers.forEach(clearTimeout);
+  }
+},
+{
+  id: "temporal", name: "Temporal lobes", title: "The Sound Lab", letter: "I",
+  x: 318, y: 345, lx: 22, ly: 5, anchor: "start",
+  sub: "A message is broadcasting from the auditory cortex, buried in static.",
+  terms: ["Temporal lobes"],
+  notes: `
+    <p class="lead">You have two <span class="term">temporal lobes</span>, one on each side of your head, just above your ears.</p>
+    <dl>
+      <dt>Hearing</dt><dd>The <b>auditory cortex</b> turns sound vibrations into sounds you recognize: voices, music, your own name.</dd>
+      <dt>Language</dt><dd><b>Wernicke's area</b> <span class="pron">(VER-nih-kuhz)</span>, usually in the left temporal lobe, helps you understand the words you hear and read.</dd>
+      <dt>Memory</dt><dd>The hippocampus and amygdala are tucked inside the temporal lobes.</dd>
+      <dt>Recognition</dt><dd>They help you recognize faces and objects.</dd>
+    </dl>
+    <div class="mission"><b>Mission</b>Turn the tuning dial until the static clears and you can read the broadcast. Then answer its question.</div>`,
+  hints: ["Drag the dial slowly. The static gets quieter and the words get clearer as you get close.", "Once the message is clear, read the last line. It asks for a name that's also in the field notes.", "The password is WERNICKE, the language area in the temporal lobe."],
+  fact: "Your temporal lobes can pick out a familiar voice in a noisy cafeteria almost instantly.",
+  answer: "Tune until LOCKED (target frequency is random), then type WERNICKE.",
+  build(c, solve) {
+    const MSG = "Auditory cortex here, inside your temporal lobes, just above your ears. I turn vibrations into sounds you recognize. My neighbor helps you understand every word you hear. Password: type my neighbor's name.";
+    const target = 900 + Math.floor(Math.random() * 150); // 90.0 - 104.9
+    const start = target > 975 ? 890 : 1070;
+    c.innerHTML = `
+      <h3>Auditory cortex receiver</h3>
+      <div class="radio" style="margin-top:10px">
+        <canvas id="tp-wave"></canvas>
+        <div class="freq"><span class="mhz" id="tp-f">${(start / 10).toFixed(1)} <small style="font-size:.9rem">MHz</small></span><span class="lockst" id="tp-l">SEARCHING</span></div>
+        <label for="tp-dial" class="eyebrow" style="display:block;margin-top:6px">Tuning dial</label>
+        <input type="range" id="tp-dial" min="880" max="1080" step="1" value="${start}">
+      </div>
+      <p class="transcript" id="tp-t" aria-live="off"></p>
+      <form class="pw" id="tp-pw"><label for="tp-in" class="eyebrow" style="width:100%">Password</label><input id="tp-in" type="text" autocomplete="off" spellcheck="false" placeholder="?"><button class="btn primary" type="submit">Submit</button></form>
+      <p class="feedback" id="tp-fb" aria-live="polite"></p>`;
+    const dial = $("#tp-dial", c), tr = $("#tp-t", c), fb = $("#tp-fb", c);
+    const rnd = MSG.split("").map(() => Math.random()), GLY = "▓▒░#%&@§¤";
+    let clarity = 0, locked = false, spoke = false, done = false, raf, noise = Sound.noise();
+    const upd = () => {
+      const v = +dial.value, d = Math.abs(v - target);
+      clarity = d <= 2 ? 1 : Math.max(0, 1 - d / 70);
+      locked = d <= 2;
+      $("#tp-f", c).innerHTML = `${(v / 10).toFixed(1)} <small style="font-size:.9rem">MHz</small>`;
+      $("#tp-l", c).textContent = locked ? "SIGNAL LOCKED" : clarity > .6 ? "GETTING CLOSER" : "SEARCHING";
+      $("#tp-l", c).classList.toggle("on", locked);
+      tr.textContent = MSG.split("").map((ch, i) => /[\s.,:']/.test(ch) || rnd[i] < clarity * clarity * .92 || locked ? ch : GLY[(i * 7 + v) % GLY.length]).join("");
+      tr.style.filter = `blur(${((1 - clarity) * 2.2).toFixed(2)}px)`;
+      if (noise) noise.set(locked ? 0 : 0.02 + (1 - clarity) * 0.1);
+      if (locked && !spoke) { spoke = true; Sound.chime(); tr.setAttribute("aria-live", "polite"); speak(MSG); }
+    };
+    dial.oninput = upd; upd();
+    $("#tp-pw", c).onsubmit = e => {
+      e.preventDefault(); if (done) return;
+      const v = $("#tp-in", c).value.trim().toLowerCase().replace(/[’']/g, "");
+      if (/^wernicke?s?( area)?$/.test(v) || v === "wernickes area") {
+        done = true; Sound.good(); fb.className = "feedback good"; fb.textContent = "Access granted. Maya can understand language again."; if (noise) noise.set(0); hush(); setTimeout(solve, 1500);
+      } else { Sound.bad(); fb.className = "feedback badf"; fb.textContent = locked ? "Access denied. Read the broadcast again, then check the field notes." : "Access denied. Tune in the broadcast first."; }
+    };
+    const cv = $("#tp-wave", c), g = cv.getContext("2d"); let W, H;
+    const size = () => { const r = cv.getBoundingClientRect(), d = devicePixelRatio || 1; W = cv.width = r.width * d; H = cv.height = r.height * d; };
+    size(); const ro = new ResizeObserver(size); ro.observe(cv);
+    const draw = t => {
+      g.clearRect(0, 0, W, H); const d = devicePixelRatio || 1;
+      g.strokeStyle = locked ? "#57efa2" : "#ffb547"; g.lineWidth = 2 * d; g.beginPath();
+      for (let x = 0; x <= W; x += 3 * d) {
+        const s = Math.sin(x / (22 * d) + t / 180) * Math.sin(x / (90 * d) + t / 900) * clarity;
+        const n = (Math.random() - .5) * (1 - clarity) * 1.6;
+        const y = H / 2 + (s + n) * H * .38; x ? g.lineTo(x, y) : g.moveTo(x, y);
+      }
+      g.stroke(); raf = requestAnimationFrame(draw);
+    };
+    raf = requestAnimationFrame(draw);
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); if (noise) noise.stop(); hush(); };
+  }
+},
+{
+  id: "limbic", name: "Limbic system", title: "Emotion Headquarters", letter: "N",
+  x: 360, y: 126, lx: 0, ly: -24, anchor: "middle",
+  sub: "The emotion and memory team has been scattered. Reassemble it.",
+  terms: ["Limbic system"],
+  notes: `
+    <p class="lead">The <span class="term">limbic system</span> is a team of structures deep in the middle of the brain that work together on <b>emotion, memory and motivation</b>.</p>
+    <p><i>Limbus</i> is Latin for "edge" or "border." The team forms a curved ring around the brain's core.</p>
+    <h4>The team</h4>
+    <dl>
+      <dt>Amygdala</dt><dd>Emotions, especially fear. The alarm.</dd>
+      <dt>Hippocampus</dt><dd>Forms new memories.</dd>
+      <dt>Hypothalamus</dt><dd>Connects emotions to the body: heart rate, hormones, hunger.</dd>
+      <dt>Cingulate gyrus</dt><dd>A curved belt of cortex above the brain's center. Helps you notice and manage emotions and keep your attention on a task.</dd>
+    </dl>
+    <p>Many scientists also count the thalamus as a partner of the team.</p>
+    <h4>Why it matters at school</h4>
+    <p>Emotion and memory are wired together. You remember things better when you care about them, which is why a fun or surprising lesson sticks.</p>
+    <div class="mission"><b>Mission</b>Eight structures are in this room. Only four belong to the limbic team. Select them and assemble the team.</div>`,
+  hints: ["The field notes list the team members by name.", "Life support, balance, vision and the body's message highway belong to other teams.", "Amygdala, Hippocampus, Hypothalamus, Cingulate gyrus."],
+  fact: "Emotion and memory share a network. That's why you remember what you care about.",
+  answer: "Select Amygdala, Hippocampus, Hypothalamus and Cingulate gyrus. (Not: Brainstem, Cerebellum, Occipital lobe, Spinal cord.)",
+  build(c, solve) {
+    const IN = ["Amygdala", "Hippocampus", "Hypothalamus", "Cingulate gyrus"], ALL = shuffle([...IN, "Brainstem", "Cerebellum", "Occipital lobe", "Spinal cord"]);
+    c.innerHTML = `
+      <h3>Team assembly</h3>
+      <div class="team" id="lb-t">${ALL.map(n => `<button class="member" aria-pressed="false" data-n="${n}">${n}</button>`).join("")}</div>
+      <div class="row" style="margin-top:18px"><button class="btn primary" id="lb-go">Assemble the team</button><span class="eyebrow" id="lb-n">0 selected</span></div>
+      <p class="feedback" id="lb-fb" aria-live="polite"></p>`;
+    let done = false; const fb = $("#lb-fb", c);
+    const sel = () => $$(".member[aria-pressed=true]", c).map(b => b.dataset.n);
+    $("#lb-t", c).onclick = e => { const b = e.target.closest(".member"); if (!b || done) return; Sound.click(); b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") !== "true"); $("#lb-n", c).textContent = sel().length + " selected"; };
+    $("#lb-go", c).onclick = () => {
+      if (done) return; const s = sel();
+      if (s.length !== 4) { Sound.bad(); fb.className = "feedback badf"; fb.textContent = `The limbic team in this room has exactly 4 members. You picked ${s.length}.`; return; }
+      const n = s.filter(x => IN.includes(x)).length;
+      if (n === 4) {
+        done = true; Sound.good(); $$(".member", c).forEach(b => b.classList.add(IN.includes(b.dataset.n) ? "win" : "out"));
+        fb.className = "feedback good"; fb.textContent = "Team assembled. Emotion and memory are back online."; setTimeout(solve, 1800);
+      } else { Sound.bad(); fb.className = "feedback badf"; fb.textContent = `${n} of your 4 picks belong on the team. Swap out the rest.`; }
+    };
+  }
+},
+{
+  id: "synapse", name: "Neurotransmitters", title: "The Synapse Lab", letter: "G",
+  x: 500, y: 168, lx: 0, ly: -24, anchor: "middle",
+  sub: "Neurons have stopped talking. Load the right chemical messenger.",
+  terms: ["Neurotransmitters", "Dopamine", "Serotonin", "GABA"],
+  notes: `
+    <p class="lead">Your brain has about <b>86 billion neurons</b>. They talk to each other using electricity and chemistry.</p>
+    <ul><li>A signal zips down a neuron as an electrical pulse.</li><li>At the end it reaches a tiny gap called a <b>synapse</b>.</li><li>The neuron releases <span class="term">neurotransmitters</span>, chemical messengers that cross the gap and fit into <b>receptors</b> on the next neuron, like a key in a lock.</li></ul>
+    <h4>The messengers</h4>
+    <dl>
+      <dt>Dopamine</dt><dd><b>Reward and motivation.</b> Released when you reach a goal or expect something good, and makes you want to do it again. Also helps control movement.</dd>
+      <dt>Serotonin</dt><dd><b>Mood, sleep and appetite.</b> Helps you feel steady and calm. About 90% of your body's serotonin is made in your gut!</dd>
+      <dt>GABA</dt><dd><b>The brain's brakes.</b> Tells neurons to slow down and fire less, which helps you feel calm and fall asleep. Its partner, glutamate, is the gas pedal.</dd>
+    </dl>
+    <p>Sleep, exercise, sunlight and good food all help keep these messengers balanced.</p>
+    <div class="mission"><b>Mission</b>Read each situation and release the neurotransmitter that fits. Six correct messages restart the conversation.</div>`,
+  hints: ["Look for the key idea: reward and motivation, mood and sleep, or calming down.", "Dopamine = \"do it again.\" Serotonin = steady mood. GABA = brakes.", "Goals and rewards → Dopamine. Mood, sleep, gut → Serotonin. Calming and slowing neurons → GABA."],
+  fact: "A synapse is about 20 nanometers wide. Thousands of them would fit across the width of a human hair.",
+  answer: "Rewards/goals/motivation/movement → Dopamine; mood/sleep/appetite/gut → Serotonin; calming/slowing/brakes → GABA.",
+  build(c, solve) {
+    const M = { dopamine: ["Dopamine", "#ffb547", "reward"], serotonin: ["Serotonin", "#4fe3ff", "mood"], gaba: ["GABA", "#c792ff", "brakes"] };
+    const Q = shuffle([
+      ["Maya finally beats a level she's been stuck on, and she can't wait to play again.", "dopamine"],
+      ["Maya checks off her first homework task and feels motivated to start the next one.", "dopamine"],
+      ["A good night's sleep and morning sunlight help Maya's mood stay steady all day.", "serotonin"],
+      ["This messenger is mostly made in the gut and helps control appetite.", "serotonin"],
+      ["Maya's racing thoughts slow down so she can finally fall asleep.", "gaba"],
+      ["The brakes: this messenger tells overexcited neurons to fire less.", "gaba"]
+    ]);
+    c.innerHTML = `
+      <h3>Synapse transmission</h3>
+      <div class="syn-wrap">
+        <div class="syn"><svg viewBox="0 0 200 230" id="sy-svg" aria-label="A synapse between two neurons">
+          <path d="M50,0 V60 C50,100 30,110 30,128 H170 C170,110 150,100 150,60 V0 Z" fill="color-mix(in srgb,#ff4fa3 18%,#0c1230)" stroke="#ff4fa3" stroke-width="2"/>
+          <g id="sy-ves" fill="none" stroke="#ff4fa3" stroke-width="1.5"><circle cx="70" cy="95" r="9"/><circle cx="100" cy="85" r="9"/><circle cx="130" cy="95" r="9"/><circle cx="85" cy="112" r="7"/><circle cx="116" cy="112" r="7"/></g>
+          <path d="M20,172 H180 C180,200 170,230 160,230 H40 C30,230 20,200 20,172 Z" fill="color-mix(in srgb,#4fe3ff 14%,#0c1230)" stroke="#4fe3ff" stroke-width="2"/>
+          <g id="sy-rec">${[40, 70, 100, 130, 160].map(x => `<path d="M${x - 8},172 v-8 h5 v5 h6 v-5 h5 v8" fill="#0c1230" stroke="#a2abdb" stroke-width="2"/>`).join("")}</g>
+          <text x="100" y="152" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#a2abdb" letter-spacing="2">SYNAPSE</text>
+          <g id="sy-p"></g>
+        </svg></div>
+        <div class="scen"><span class="eyebrow" id="sy-n">Message 1 of 6</span><p id="sy-q" aria-live="polite"></p>
+          <div class="mols" id="sy-m">${Object.entries(M).map(([k, v]) => `<button class="mol" data-m="${k}" style="--c:${v[1]}">${v[0]}<small>${v[2]}</small></button>`).join("")}</div>
+        </div>
+      </div>
+      <div class="pips" id="sy-pp">${Q.map(() => "<i></i>").join("")}</div>
+      <p class="feedback" id="sy-fb" aria-live="polite"></p>`;
+    let i = 0, busy = false, raf; const fb = $("#sy-fb", c), P = $("#sy-p", c);
+    const show = () => { $("#sy-n", c).textContent = `Message ${i + 1} of ${Q.length}`; $("#sy-q", c).textContent = Q[i][0]; };
+    show();
+    const fire = (color, ok, after) => {
+      const parts = Array.from({ length: 12 }, (_, k) => ({ x: 62 + Math.random() * 76, y: 100 + Math.random() * 16, tx: 32 + (k % 5) * 30 + (Math.random() * 8 - 4), d: Math.random() * 180 }));
+      P.innerHTML = parts.map(() => `<circle r="3.4" fill="${color}"/>`).join("");
+      const cs = $$("circle", P), t0 = performance.now();
+      const step = now => {
+        const t = now - t0;
+        parts.forEach((p, k) => {
+          let u = Math.max(0, Math.min(1, (t - p.d) / 700)); u = 1 - Math.pow(1 - u, 3);
+          let x = p.x + (p.tx - p.x) * u, y = p.y + (160 - p.y) * u;
+          if (!ok && t - p.d > 700) { const b = Math.min(1, (t - p.d - 700) / 500); y = 160 - b * 40; }
+          cs[k].setAttribute("cx", x.toFixed(1)); cs[k].setAttribute("cy", y.toFixed(1)); cs[k].setAttribute("opacity", !ok && t > 1300 ? Math.max(0, 1 - (t - 1300) / 300) : 1);
+        });
+        if (ok && t > 900) $$("#sy-rec path", c).forEach(r => { r.setAttribute("stroke", color); r.setAttribute("fill", color); });
+        if (t < 1600) raf = requestAnimationFrame(step); else { P.innerHTML = ""; $$("#sy-rec path", c).forEach(r => { r.setAttribute("stroke", "#a2abdb"); r.setAttribute("fill", "#0c1230"); }); after(); }
+      };
+      raf = requestAnimationFrame(step);
+    };
+    $("#sy-m", c).onclick = e => {
+      const b = e.target.closest(".mol"); if (!b || busy) return; busy = true;
+      const ok = b.dataset.m === Q[i][1]; Sound.tone(ok ? 880 : 200, .2, "triangle", .1);
+      fb.className = "feedback " + (ok ? "good" : "badf");
+      fb.textContent = ok ? `${M[b.dataset.m][0]} locked into its receptors. Message received.` : `${M[b.dataset.m][0]} doesn't fit these receptors. It bounced back.`;
+      fire(M[b.dataset.m][1], ok, () => {
+        busy = false;
+        if (ok) { $$("#sy-pp i", c)[i].classList.add("on"); i++; if (i === Q.length) { busy = true; $("#sy-q", c).textContent = "Neurons are talking again."; Sound.good(); solve(); } else { show(); fb.textContent = ""; } }
+      });
+    };
+    return () => cancelAnimationFrame(raf);
+  }
+},
+{
+  id: "frontal", name: "Frontal lobe", title: "Command Center", letter: "", final: true,
+  x: 196, y: 172, lx: 0, ly: 34, anchor: "middle",
+  sub: "The exit. Enter the override code to break Maya's brain out of lockdown.",
+  terms: ["Frontal lobe"],
+  notes: `
+    <p class="lead">The <span class="term">frontal lobe</span> sits right behind your forehead. It's the largest lobe and the brain's <b>command center</b>.</p>
+    <ul><li>Planning, organizing and making decisions</li><li>Focus and solving problems</li><li><b>Impulse control</b>: stopping to think before you act</li><li>Personality and behavior</li><li>Movement (the motor cortex) and speaking (Broca's area)</li></ul>
+    <h4>Still under construction</h4>
+    <p>The very front part, the <b>prefrontal cortex</b>, keeps developing until about age 25. Every time you practice planning, focusing or pausing before you react, you strengthen those connections.</p>
+    <h4>Connections</h4>
+    <p>When the amygdala's alarm is too loud, the frontal lobe struggles. Mindfulness, sleep, water and glucose all help it work at full power.</p>
+    <div class="mission"><b>Mission</b>You collected eight letters. Arrange them into the override code. Think first. Don't guess.</div>`,
+  hints: ["Don't press the red button. Seriously.", "The code is what your brain does at school every single day.", "LEARNING."],
+  fact: "The prefrontal cortex is the last part of the brain to finish developing, around age 25.",
+  answer: "Arrange the letters to spell LEARNING. The big red button is an impulse-control trap (+15 s each press).",
+  build(c, solve) {
+    const WORD = "LEARNING"; let tiles; do { tiles = shuffle(WORD.split("")); } while (tiles.join("") === WORD);
+    c.innerHTML = `
+      <h3>Override code</h3>
+      <div class="codebox" id="fr-s">${WORD.split("").map((_, i) => `<button class="cslot" data-i="${i}" aria-label="Code slot ${i + 1}, empty"></button>`).join("")}</div>
+      <div class="tiles" id="fr-t">${tiles.map((l, i) => `<button class="tile" data-t="${i}" aria-label="Letter ${l}">${l}</button>`).join("")}</div>
+      <p class="feedback" id="fr-fb" aria-live="polite" style="text-align:center"></p>
+      <div class="redzone"><button class="bigred" id="fr-red">INSTANT<br>ESCAPE</button><span class="eyebrow" id="fr-rl">Press for an instant solution!</span></div>`;
+    const slots = Array(8).fill(null), fb = $("#fr-fb", c); let done = false, presses = 0;
+    const render = () => {
+      $$(".cslot", c).forEach((s, i) => { const t = slots[i]; s.textContent = t == null ? "" : tiles[t]; s.classList.toggle("fill", t != null); s.setAttribute("aria-label", `Code slot ${i + 1}, ${t == null ? "empty" : tiles[t]}`); });
+      $$(".tile", c).forEach((b, i) => b.disabled = slots.includes(i));
+    };
+    $("#fr-t", c).onclick = e => {
+      const b = e.target.closest(".tile"); if (!b || done) return;
+      const k = slots.indexOf(null); if (k < 0) return; Sound.click(); slots[k] = +b.dataset.t; render();
+      if (!slots.includes(null)) {
+        const w = slots.map(t => tiles[t]).join("");
+        if (w === WORD) { done = true; fb.className = "feedback good"; fb.textContent = "OVERRIDE ACCEPTED"; $$(".cslot", c).forEach(s => s.style.borderColor = "var(--ok)"); $("#fr-red", c).disabled = true; setTimeout(solve, 900); }
+        else { Sound.bad(); fb.className = "feedback badf"; fb.textContent = `"${w}" is not the code. Click letters in the code to send them back.`; const box = $("#fr-s", c); box.classList.remove("shake"); void box.offsetWidth; box.classList.add("shake"); }
+      }
+    };
+    $("#fr-s", c).onclick = e => { const s = e.target.closest(".cslot"); if (!s || done) return; const i = +s.dataset.i; if (slots[i] == null) return; Sound.click(); slots[i] = null; render(); fb.textContent = ""; };
+    $("#fr-red", c).onclick = () => {
+      presses++; S.impulse++; if (S.minutes) S.penalty += IMPULSE_COST; store.save(); Sound.alarm(0.08);
+      $("#fr-rl", c).textContent = presses === 1 ? "That was a test." : presses === 2 ? "Seriously. Don't." : `Impulses detected: ${presses}`;
+      showFlash("Impulse detected!", `That button was a test of your <b>frontal lobe</b>. Its job is <b>impulse control</b>: stopping to think before you act. There is no instant escape, only planning.${S.minutes ? ` <b>−${IMPULSE_COST} seconds.</b>` : ""}`);
+    };
+  }
+}
+];
+const byId = Object.fromEntries(ROOMS.map(r => [r.id, r]));
+const LETTER_ROOMS = ROOMS.filter(r => !r.final);
+
+/* ================= progression ================= */
+const solvedCount = () => LETTER_ROOMS.filter(r => S.solved[r.id]).length;
+function access(r) {
+  if (S.solved[r.id]) return "solved";
+  if (r.id === "brainstem") return "open";
+  if (r.final) return solvedCount() === LETTER_ROOMS.length ? "open" : "locked";
+  return S.solved.brainstem ? "open" : "locked";
+}
+function lockReason(r) { return r.final ? `Needs all 8 letters (${solvedCount()}/8)` : "Restore life support first"; }
+
+/* ================= screens ================= */
+let current = null, cleanup = null;
+function show(id) {
+  ["intro", "hub", "room", "win"].forEach(s => $("#" + s).hidden = s !== id);
+  $("#hud").hidden = id === "intro";
+  $("#btn-map").hidden = id !== "room";
+  scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+}
+function leaveRoom() { if (cleanup) { try { cleanup(); } catch (e) {} } cleanup = null; current = null; hush(); }
+
+/* ---- HUD ---- */
+function renderSlots(pop) {
+  const got = S.finished ? "LEARNING".split("") : LETTER_ROOMS.filter(r => S.solved[r.id]).map(r => r.letter).sort();
+  $("#slots").innerHTML = Array.from({ length: 8 }, (_, i) => `<span class="slot ${got[i] ? "on" : ""} ${pop && got[i] === pop ? "pop" : ""}">${got[i] || ""}</span>`).join("");
+  $("#hud-team").textContent = S.team || "Team";
+}
+function remaining() { return S.minutes * 60 - S.elapsed / 1000 - S.penalty; }
+function renderTimer() {
+  const t = $("#timer");
+  if (!S.minutes) { t.textContent = fmt(S.elapsed / 1000 + S.penalty); t.className = "timer"; t.title = "Time used (study mode)"; return; }
+  const r = remaining();
+  if (r >= 0) { t.textContent = fmt(r); t.className = "timer" + (r < 120 ? " low" : ""); t.title = "Time left"; }
+  else { t.textContent = "+" + fmt(-r); t.className = "timer over"; t.title = "Overtime"; }
+}
+
+/* ---- hub ---- */
+function renderHub() {
+  const m = $("#markers");
+  m.innerHTML = ROOMS.map(r => {
+    const a = access(r);
+    const inner = a === "solved" ? `<text class="ltr" text-anchor="middle" y="5">${r.final ? "✓" : r.letter}</text>`
+      : a === "locked" ? `<path class="glyph" d="${GL.lock}"/>`
+      : r.final ? `<path class="glyph" style="stroke:var(--heat)" d="${GL.exit}"/>` : `<circle r="4" fill="var(--signal)"/>`;
+    return `<g class="mk ${a} ${r.final ? "final" : ""}" transform="translate(${r.x} ${r.y})" data-room="${r.id}" tabindex="${a === "locked" ? -1 : 0}" role="button" aria-label="${r.name}: ${a === "locked" ? "sealed. " + lockReason(r) : a === "solved" ? "cleared" : "open"}">
+      <circle class="ring-a" r="15"/><circle class="dot" r="15"/>${inner}
+      <text class="lbl" x="${r.lx}" y="${r.ly}" text-anchor="${r.anchor}">${r.name}</text></g>`;
+  }).join("");
+  $("#roomlist").innerHTML = ROOMS.map(r => {
+    const a = access(r);
+    return `<li><button class="${a} ${r.final ? "final" : ""}" data-room="${r.id}" ${a === "locked" ? "disabled" : ""}>
+      <span class="st">${a === "solved" ? (r.final ? "✓" : r.letter) : r.final ? "⇥" : a === "open" ? "•" : ""}</span>
+      <span class="nm">${r.name}<small>${r.title}</small></span>
+      <span class="tg">${a === "solved" ? "Cleared" : a === "open" ? (r.final ? "Exit open" : "Open") : "Sealed"}</span></button></li>`;
+  }).join("");
+  const n = solvedCount();
+  $("#prog").style.width = (n / 8 * 100) + "%";
+  if (!S.solved.brainstem) { $("#log-title").textContent = "Restore life support first"; $("#log-brief").textContent = "Maya's brainstem is failing. Nothing else in the brain can open until breathing and heartbeat are back online."; }
+  else if (n < 8) { $("#log-title").textContent = `${n} of 8 letters recovered`; $("#log-brief").textContent = "Every inner room is unsealed. Clear them in any order. Each one gives a letter of the override code. The exit in the frontal lobe opens when you have all eight."; }
+  else { $("#log-title").textContent = "The exit is open"; $("#log-brief").textContent = "You have all eight letters. Head to the frontal lobe, the brain's command center, and enter the override code."; }
+}
+
+/* ---- room ---- */
+function openRoom(id) {
+  const r = byId[id]; if (!r || access(r) === "locked") return;
+  leaveRoom(); current = r; Sound.click();
+  $("#r-eyebrow").textContent = r.final ? "Final room · Exit" : `Room · ${r.name}`;
+  $("#r-title").innerHTML = `${r.title}`;
+  $("#r-sub").textContent = r.sub;
+  $("#r-notes").innerHTML = `<p class="eyebrow"><span>Field notes</span><span>${r.name}</span></p>${r.notes}`;
+  $("#r-notes").scrollTop = 0;
+  renderHints();
+  show("room");
+  const con = $("#r-console");
+  if (S.solved[id] && !r.final) { renderSolved(r, false); return; }
+  cleanup = r.build(con, () => solveRoom(r)) || null;
+}
+function renderHints() {
+  const r = current, used = S.hints[r.id] || 0;
+  $("#r-hints").innerHTML = r.hints.slice(0, used).map((h, i) => `<li><b>Hint ${i + 1}.</b> ${h}</li>`).join("");
+  const b = $("#hint-btn");
+  b.disabled = used >= r.hints.length || !!S.solved[r.id];
+  b.textContent = used >= r.hints.length ? "No hints left" : `Get hint ${used + 1} of ${r.hints.length}`;
+  $("#hint-cost").textContent = S.minutes ? `Each hint costs ${HINT_COST} seconds.` : "Study mode: hints are free.";
+  $("#r-hintbar").hidden = !!S.solved[r.id] && !r.final;
+}
+function useHint() {
+  const r = current; if (!r) return;
+  const used = S.hints[r.id] || 0; if (used >= r.hints.length) return;
+  S.hints[r.id] = used + 1; if (S.minutes) S.penalty += HINT_COST; store.save();
+  Sound.tone(520, .15, "triangle", .1); renderHints(); renderTimer();
+  if (S.minutes) toast(`Hint unlocked · −${HINT_COST} seconds`);
+}
+function renderSolved(r, fresh) {
+  $("#r-console").innerHTML = `
+    <div class="solved-panel">
+      <p class="eyebrow">${fresh ? "Room cleared" : "Already cleared"}</p>
+      <div class="bigletter" aria-label="Letter ${r.letter}">${r.letter}</div>
+      <h3 style="color:var(--text);text-transform:none;letter-spacing:0;font-size:1.4rem">Override letter recovered: ${r.letter}</h3>
+      <div class="factcard"><b>Brain fact unlocked</b>${r.fact}</div>
+      <p style="color:var(--muted)">Terms discovered: ${r.terms.map(t => `<span class="term">${t}</span>`).join(", ")}</p>
+      <div class="row">
+        <button class="btn primary" data-act="${solvedCount() === 8 ? "go-final" : "map"}">${solvedCount() === 8 ? "Head to the frontal lobe →" : "Back to the brain map"}</button>
+        <button class="btn ghost small" data-act="replay">Replay this puzzle</button>
+      </div>
+    </div>`;
+  $("#r-hintbar").hidden = true;
+}
+function solveRoom(r) {
+  if (current !== r) return;
+  const first = !S.solved[r.id];
+  if (first) { S.solved[r.id] = Math.round(S.elapsed); store.save(); }
+  if (r.final) { win(); return; }
+  if (cleanup) { try { cleanup(); } catch (e) {} cleanup = null; }
+  Sound.letter(); renderSlots(first ? r.letter : null); renderSolved(r, true);
+  if (first) toast(`Letter ${r.letter} recovered · ${solvedCount()} of 8`);
+}
+
+/* ---- win ---- */
+function win() {
+  leaveRoom(); S.finished = true; S.finalTime = S.elapsed / 1000 + S.penalty; store.save();
+  Sound.win();
+  const hints = Object.values(S.hints).reduce((a, b) => a + b, 0);
+  const beat = !S.minutes || remaining() >= 0;
+  const doors = document.createElement("div"); doors.className = "doors"; doors.innerHTML = "<div>UNLO</div><div>CKED</div>";
+  document.body.appendChild(doors);
+  requestAnimationFrame(() => requestAnimationFrame(() => doors.classList.add("open")));
+  setTimeout(() => doors.remove(), 2600);
+  $("#cert").innerHTML = `
+    <p class="eyebrow">Neuro Lockdown · Escape certificate</p>
+    <h2>Maya's brain is <span>unlocked</span></h2>
+    <p class="who"><b>${esc(S.team || "Your team")}</b> broke out of lockdown${S.minutes ? (beat ? " before the clock ran out" : " in overtime") : ""}. Maya wakes up rested, hydrated and ready to ace her science test.</p>
+    <div class="stats">
+      <div class="stat"><b>${fmt(S.finalTime)}</b><span>total time${S.penalty ? ` (incl. ${S.penalty}s penalties)` : ""}</span></div>
+      <div class="stat"><b>9/9</b><span>brain regions cleared</span></div>
+      <div class="stat"><b>${hints}</b><span>hints used</span></div>
+      <div class="stat"><b>18/18</b><span>brain terms discovered</span></div>
+    </div>
+    <div class="badges">
+      <span class="badge ${S.impulse ? "miss" : ""}">${S.impulse ? `Impulse control: pressed the red button ${S.impulse}×` : "Impulse control: resisted the red button"}</span>
+      <span class="badge ${hints ? "miss" : ""}">${hints ? `${hints} hint${hints > 1 ? "s" : ""} used` : "No hints needed"}</span>
+      ${S.minutes ? `<span class="badge ${beat ? "" : "miss"}">${beat ? "Beat the clock" : "Finished in overtime"}</span>` : `<span class="badge">Study mode</span>`}
+    </div>
+    <div class="glossary">
+      <h3>Your brain field guide</h3>
+      <p style="color:var(--muted);margin-top:4px">All 18 terms from the project, in one place. <span style="color:var(--stain)">Pink</span> = primary terms, <span style="color:var(--signal)">blue</span> = supporting terms.</p>
+      <div class="gloss">${TERMS.map(t => `<div class="${t[2] ? "" : "sec"}"><b>${t[0]}</b><p>${t[1]}</p></div>`).join("")}</div>
+    </div>
+    <div class="row" style="margin-top:24px"><button class="btn primary" data-act="restart">Play again</button><button class="btn ghost" data-act="journal">Open field journal</button></div>`;
+  show("win"); renderSlots();
+}
+
+/* ---- modal ---- */
+let lastFocus = null;
+function modal(html) { lastFocus = document.activeElement; $("#modal-body").innerHTML = html; $("#modal").hidden = false; $(".modal-x").focus(); }
+function closeModal() { $("#modal").hidden = true; if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+function journal() {
+  const found = new Set(ROOMS.filter(r => S.solved[r.id]).flatMap(r => r.terms));
+  modal(`<h2 id="modal-title">Field journal</h2>
+    <p style="color:var(--muted);margin-top:6px">${found.size} of 18 brain terms discovered. Clear rooms to fill in the rest.</p>
+    <div class="termgrid">${TERMS.map(t => `<span class="${found.has(t[0]) ? "on" : ""}">${t[0]}</span>`).join("")}</div>
+    <div class="jlist">${ROOMS.filter(r => S.solved[r.id]).map(r => `<div class="factcard"><b>${r.name}${r.letter ? " · letter " + r.letter : ""}</b>${r.fact}</div>`).join("") || `<p style="color:var(--muted)">No rooms cleared yet. Start with the brainstem.</p>`}</div>`);
+}
+function gmGuide() {
+  modal(`<h2 id="modal-title">Game Master guide</h2>
+    <p style="color:var(--muted);margin-top:6px">For the person running the escape room. Keep this screen away from players.</p>
+    <p style="margin-top:12px"><b>Flow:</b> Brainstem first → the 7 inner rooms in any order → Frontal lobe exit. Each inner room gives one letter; together they spell <b class="mono">LEARNING</b>.</p>
+    <div class="gm-scroll"><table class="gm-table"><thead><tr><th>Room</th><th>Letter</th><th>Solution</th>${S.gm && S.started ? "<th></th>" : ""}</tr></thead><tbody>
+    ${ROOMS.map(r => `<tr><th>${r.name}</th><td class="mono">${r.letter || "—"}</td><td>${r.answer}</td>${S.gm && S.started ? `<td><button class="btn small" data-act="gm-skip" data-room="${r.id}" ${S.solved[r.id] || access(r) === "locked" ? "disabled" : ""}>Skip</button></td>` : ""}</tr>`).join("")}
+    </tbody></table></div>
+    <p style="margin-top:14px;color:var(--muted)">Hints cost ${HINT_COST}s. The red button in the final room is an impulse-control trap and costs ${IMPULSE_COST}s per press. Progress saves in this browser, so a refresh won't lose it.</p>
+    <div class="row" style="margin-top:14px">
+      <label class="row" style="gap:8px"><input type="checkbox" id="gm-on" ${S.gm ? "checked" : ""}> Show "Skip" buttons (for demos or if a device breaks)</label>
+      ${S.started ? `<button class="btn small ghost" data-act="restart">Reset game</button>` : ""}
+    </div>`);
+  $("#gm-on").onchange = e => { S.gm = e.target.checked; store.save(); gmGuide(); };
+}
+function showFlash(title, body) {
+  const f = $("#flash");
+  f.innerHTML = `<div class="fcard" role="alertdialog" aria-labelledby="fl-t"><h2 id="fl-t">${title}</h2><p>${body}</p><div class="row" style="margin-top:16px"><button class="btn primary" data-act="flash-close">Think first. Got it.</button></div></div>`;
+  f.hidden = false; $("[data-act=flash-close]", f).focus();
+}
+let toastT;
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 2600); }
+const esc = s => String(s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+
+/* ================= game flow ================= */
+function startGame(e) {
+  e.preventDefault();
+  S = fresh();
+  S.team = $("#team").value.trim() || "The Neuron Ninjas";
+  S.minutes = +($("input[name=mins]:checked").value);
+  S.started = true; S.sound = true;
+  Sound.ensure(); Sound.good();
+  store.save(); enterHub();
+}
+function enterHub() { leaveRoom(); renderSlots(); renderHub(); renderTimer(); updateSoundBtn(); show("hub"); }
+function restart() { leaveRoom(); store.clear(); S = fresh(); closeModal(); $("#resume").hidden = true; show("intro"); renderSlots(); typeStory(true); }
+
+let lastTick = performance.now();
+setInterval(() => {
+  const now = performance.now(), dt = Math.min(1000, now - lastTick); lastTick = now;
+  if (!S.started || S.finished || !$("#intro").hidden) return;
+  S.elapsed += dt; renderTimer();
+  if (S.minutes && remaining() <= 0 && !S.overtimeShown) {
+    S.overtimeShown = true; store.save(); Sound.alarm(0.08);
+    showFlash("Time's up!", "Maya's alarm clock just rang. In a real escape room your team would be out of time, but the brain never stops learning. Keep going in <b>overtime</b> and finish the mission.");
+  }
+  if (Math.round(S.elapsed) % 5000 < 260) store.save();
+}, 250);
+
+function updateSoundBtn() { const b = $("#btn-sound"); b.textContent = S.sound ? "Sound on" : "Sound off"; b.setAttribute("aria-pressed", S.sound); }
+
+document.addEventListener("click", e => {
+  const mk = e.target.closest("[data-room]");
+  const a = e.target.closest("[data-act]");
+  if (a) {
+    const act = a.dataset.act;
+    if (act === "map") { enterHub(); return; }
+    if (act === "journal") { journal(); return; }
+    if (act === "gm") { gmGuide(); return; }
+    if (act === "close") { closeModal(); return; }
+    if (act === "hint") { useHint(); return; }
+    if (act === "resume") { enterHub(); return; }
+    if (act === "restart") { restart(); return; }
+    if (act === "go-final") { openRoom("frontal"); return; }
+    if (act === "replay") { const r = current; leaveRoom(); current = r; $("#r-hintbar").hidden = false; cleanup = r.build($("#r-console"), () => { toast("Puzzle cleared again. Nice memory!"); Sound.good(); if (cleanup) { try { cleanup(); } catch (x) {} cleanup = null; } renderSolved(r, false); }) || null; return; }
+    if (act === "flash-close") { $("#flash").hidden = true; return; }
+    if (act === "sound") { S.sound = !S.sound; if (!S.sound) { Sound.mute(); hush(); } else Sound.ensure(); updateSoundBtn(); store.save(); return; }
+    if (act === "gm-skip") { const r = byId[a.dataset.room]; closeModal(); if (current !== r) openRoom(r.id); solveRoom(r); return; }
+  }
+  if (mk && mk.closest("#markers, #roomlist")) openRoom(mk.dataset.room);
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") { if (!$("#flash").hidden) $("#flash").hidden = true; else if (!$("#modal").hidden) closeModal(); }
+  const mk = e.target.closest && e.target.closest(".mk");
+  if (mk && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openRoom(mk.dataset.room); }
+});
+$("#modal").addEventListener("click", e => { if (e.target.id === "modal") closeModal(); });
+$("#setup").addEventListener("submit", startGame);
+
+/* ================= intro story ================= */
+const STORY = "10:47 PM. Tomorrow is Maya's big science test. Your team has been shrunk to the size of a single cell and sent into her brain to help her study. The moment you arrive, everything goes into LOCKDOWN. Life support is flickering, alarms are blaring, and every region is sealed. Each room hides one letter of an override code. Recover all eight, reach the frontal lobe, and break out before morning.";
+let storyT;
+function typeStory(instant) {
+  const el = $("#story"); clearInterval(storyT);
+  if (instant || reduce) { el.textContent = STORY; return; }
+  let i = 0; el.innerHTML = '<span class="caret"></span>';
+  storyT = setInterval(() => { i += 2; el.innerHTML = esc(STORY.slice(0, i)) + '<span class="caret"></span>'; if (i >= STORY.length) { clearInterval(storyT); el.textContent = STORY; } }, 22);
+}
+$("#story").addEventListener("click", () => typeStory(true));
+
+/* ================= background: living neural network ================= */
+(function net() {
+  const cv = $("#net"), g = cv.getContext("2d"); let W, H, d, nodes = [], pulses = [], raf;
+  const init = () => {
+    d = Math.min(2, devicePixelRatio || 1); W = cv.width = innerWidth * d; H = cv.height = innerHeight * d;
+    const n = Math.round(Math.min(90, innerWidth * innerHeight / 16000));
+    nodes = Array.from({ length: n }, () => ({ x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - .5) * .12 * d, vy: (Math.random() - .5) * .12 * d, r: (1 + Math.random() * 1.8) * d }));
+    pulses = [];
+  };
+  const LINK = 150;
+  const frame = () => {
+    g.clearRect(0, 0, W, H);
+    const L = LINK * d;
+    for (const p of nodes) { p.x += p.vx; p.y += p.vy; if (p.x < 0 || p.x > W) p.vx *= -1; if (p.y < 0 || p.y > H) p.vy *= -1; }
+    g.lineWidth = 1 * d;
+    for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+      const a = nodes[i], b = nodes[j], dx = a.x - b.x, dy = a.y - b.y, dist = Math.hypot(dx, dy);
+      if (dist < L) {
+        g.strokeStyle = `rgba(79,227,255,${(1 - dist / L) * .13})`; g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
+        if (!reduce && Math.random() < .0009) pulses.push({ a, b, t: 0 });
+      }
+    }
+    for (const p of nodes) { g.fillStyle = "rgba(255,79,163,.45)"; g.beginPath(); g.arc(p.x, p.y, p.r, 0, 7); g.fill(); }
+    pulses = pulses.filter(p => (p.t += .018) < 1);
+    for (const p of pulses) { const x = p.a.x + (p.b.x - p.a.x) * p.t, y = p.a.y + (p.b.y - p.a.y) * p.t; g.fillStyle = "rgba(255,181,71,.9)"; g.shadowColor = "#ffb547"; g.shadowBlur = 12 * d; g.beginPath(); g.arc(x, y, 2.2 * d, 0, 7); g.fill(); g.shadowBlur = 0; }
+    if (!reduce) raf = requestAnimationFrame(frame);
+  };
+  init(); frame();
+  addEventListener("resize", () => { init(); if (reduce) frame(); });
+  document.addEventListener("visibilitychange", () => { cancelAnimationFrame(raf); if (!document.hidden && !reduce) raf = requestAnimationFrame(frame); });
+})();
+
+/* ================= intro mini ECG (flatlining) ================= */
+(function miniEcg() {
+  const cv = $("#mini-ecg"), g = cv.getContext("2d"); let t = 0;
+  const draw = () => {
+    if ($("#intro").hidden) { requestAnimationFrame(draw); return; }
+    const r = cv.getBoundingClientRect(), d = devicePixelRatio || 1;
+    if (cv.width !== Math.round(r.width * d)) { cv.width = r.width * d; cv.height = r.height * d; }
+    const W = cv.width, H = cv.height; g.clearRect(0, 0, W, H);
+    g.strokeStyle = "#ff6363"; g.lineWidth = 2 * d; g.shadowColor = "#ff6363"; g.shadowBlur = 8 * d; g.beginPath();
+    for (let x = 0; x <= W; x += 2 * d) {
+      const u = ((x / W) * 3 + t) % 1, fade = Math.max(0, 1 - x / W * 1.1);
+      let y = 0; if (u > .2 && u < .23) y = -.8; else if (u >= .23 && u < .26) y = .5;
+      const yy = H / 2 + y * H * .45 * fade + (Math.random() - .5) * d;
+      x ? g.lineTo(x, yy) : g.moveTo(x, yy);
+    }
+    g.stroke(); if (!reduce) t += .002;
+    requestAnimationFrame(draw);
+  };
+  draw();
+})();
+
+/* ================= boot ================= */
+function boot(data) {
+  const saved = (data && data.S) || store.load();
+  if (saved && saved.started && !saved.finished) {
+    S = Object.assign(fresh(), saved);
+    $("#resume").hidden = false; $("#resume").textContent = `Resume ${S.team}'s game (${solvedCount()}/8 letters)`;
+    $("#team").value = S.team;
+  }
+  if (location.hash === "#gm") setTimeout(gmGuide, 300);
+  typeStory();
+}
+try { window.claude?.hot?.snapshot?.(() => ({ S })); } catch (e) {}
+const hot = window.claude?.hot;
+if (hot?.ready) hot.ready(boot); else boot(hot?.data ?? {});
+})();
+</script>
+</body>
+</html>
