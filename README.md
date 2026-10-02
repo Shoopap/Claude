@@ -13,7 +13,7 @@ It's half paper, half screen:
 1. Print `Neuro-Lockdown-Case-File.pdf`, one copy per team. No cutting.
 2. Open `index.html` on each team's laptop or Chromebook and choose **With the printed Case File**.
 3. Hand out pencils. The game runs on a 30-minute clock. Tell teams to split up: some solve paper pages while others play on screen.
-4.  Keep `Neuro-Lockdown-Answer-Key.pdf` for yourself.
+4. Keep `Neuro-Lockdown-Answer-Key.pdf` for yourself.
 
 ## Rooms
 
