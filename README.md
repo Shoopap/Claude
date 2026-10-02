@@ -29,6 +29,6 @@ It's half paper, half screen:
 | Neurotransmitters | 6 · dopamine / serotonin / GABA decoder | `VESICLE` | Fire four messengers across a synapse |
 | Frontal lobe | (none) | — | Unscramble **LEARNING** |
 
-All 12 primary terms and all 6 supporting terms (water, stress, mindfulness, memory, oxygen, glucose) are taught in the on-screen field notes and used in the puzzles.
+All 12 primary terms and all 6 supporting terms (water, stress, mindfulness, memory, oxygen, glucose) are taught in the on-screen field notes and used in the puzzles. Every room also has a "Why it matters for learning" box that connects that brain part to school, shown in the notes and again when the room is cleared.
 
 "Screen only (practice)" mode skips the doors, for testing the game without paper. The `case-file/` folder has the source for the PDFs.

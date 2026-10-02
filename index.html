@@ -188,6 +188,9 @@ p{margin:0}
 .notes .mission{margin-top:18px;border:1px solid color-mix(in srgb,var(--heat) 50%,var(--line));background:color-mix(in srgb,var(--heat) 8%,transparent);border-radius:10px;padding:12px 14px}
 .notes .mission b{color:var(--heat);font-family:var(--f-display);letter-spacing:.06em;text-transform:uppercase;font-size:.85rem;display:block}
 .term{color:var(--stain);font-weight:700}
+.learnbox{margin-top:18px;border:1px solid color-mix(in srgb,var(--ok) 55%,var(--line));background:color-mix(in srgb,var(--ok) 9%,transparent);border-radius:10px;padding:12px 14px;max-width:60ch}
+.learnbox b{color:var(--ok);font-family:var(--f-display);letter-spacing:.06em;text-transform:uppercase;font-size:.85rem;display:block;margin-bottom:2px}
+.solved-panel .learnbox{margin-top:0}
 .console{position:relative;background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:var(--r);padding:20px;min-height:420px;overflow:hidden}
 .console::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 50%,transparent 55%,color-mix(in srgb,var(--bad) calc(var(--alarm) * 60%),transparent));transition:background .6s}
 .console h3{font-size:1.05rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
@@ -1286,6 +1289,19 @@ const DOORS = {
   synapse: { page: 6, title: "Message Decoder", code: "VESICLE", hints: ["Pick the messenger for each situation, then find that card's letter under the messenger's column.", "Dopamine, Serotonin, GABA, Serotonin, Dopamine, Dopamine, GABA spells VESICLE."] }
 };
 ROOMS.forEach(r => r.door = DOORS[r.id]);
+const LEARN = {
+  brainstem: "Your brainstem keeps you awake and alert in class, but only with a steady supply of oxygen, glucose and water. Eating breakfast and drinking water really do help you focus.",
+  thalamus: "Your thalamus decides which signals get passed along. In a noisy classroom, it helps you tune out the hallway and pay attention to your teacher. Fewer distractions, like a silenced phone, make its job easier.",
+  hypothalamus: "When you're hungry, thirsty, too hot or short on sleep, the hypothalamus makes your body fix that first. That's why it's hard to learn on an empty stomach or after staying up late.",
+  amygdala: "When the alarm goes off during a test, your thinking brain gets less power and your mind can go blank. A few slow breaths before a test calm the alarm so you can use what you studied.",
+  hippocampus: "Everything you learn passes through the hippocampus on its way to long-term memory. Sleeping well and quizzing yourself are two of the best ways to make studying stick.",
+  temporal: "Your temporal lobes are how you understand what your teacher says and what you read. Listening closely and putting ideas into your own words helps them do their job.",
+  limbic: "Because emotion and memory are wired together, you remember lessons that surprise you, interest you or make you laugh. Connecting a topic to something you care about makes it easier to remember.",
+  synapse: "Every time you learn or practice something, the synapses between those neurons get stronger. Dopamine is part of why finishing a small goal feels good, so breaking big assignments into small steps keeps you motivated.",
+  frontal: "Your frontal lobe plans your studying, keeps you focused and stops you from grabbing your phone. It's still developing, and it gets stronger every time you practice planning and self-control."
+};
+ROOMS.forEach(r => { r.learn = LEARN[r.id]; });
+const learnBox = r => `<div class="learnbox"><b>Why it matters for learning</b>${r.learn}</div>`;
 const byId = Object.fromEntries(ROOMS.map(r => [r.id, r]));
 const doorPhase = r => S.mode === "paper" && !!r.door && !S.doors[r.id] && !S.solved[r.id];
 const ARW = { U: "↑", D: "↓", L: "←", R: "→" };
@@ -1359,7 +1375,7 @@ function openRoom(id) {
   $("#r-eyebrow").textContent = r.final ? "Final room · Exit" : `Room · ${r.name}`;
   $("#r-title").innerHTML = `${r.title}`;
   $("#r-sub").textContent = r.sub;
-  $("#r-notes").innerHTML = `<p class="eyebrow"><span>Field notes</span><span>${r.name}</span></p>${r.notes}`;
+  $("#r-notes").innerHTML = `<p class="eyebrow"><span>Field notes</span><span>${r.name}</span></p>${r.notes.replace('<div class="mission">', learnBox(r) + '<div class="mission">')}`;
   $("#r-notes").scrollTop = 0;
   renderHints();
   show("room");
@@ -1439,6 +1455,7 @@ function renderSolved(r, fresh) {
       <div class="bigletter" aria-label="Letter ${r.letter}">${r.letter}</div>
       <h3 style="color:var(--text);text-transform:none;letter-spacing:0;font-size:1.4rem">Override letter recovered: ${r.letter}</h3>
       <div class="factcard"><b>Brain fact unlocked</b>${r.fact}</div>
+      ${learnBox(r)}
       <p style="color:var(--muted)">Terms discovered: ${r.terms.map(t => `<span class="term">${t}</span>`).join(", ")}</p>
       <div class="row">
         <button class="btn primary" data-act="${solvedCount() === 8 ? "go-final" : "map"}">${solvedCount() === 8 ? "Head to the frontal lobe →" : "Back to the brain map"}</button>
