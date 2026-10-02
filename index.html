@@ -458,7 +458,6 @@ legend{font-family:var(--f-display);font-weight:600;padding:0}
             <span class="eyebrow" id="clock-lbl">Clock</span>
             <div class="seg" role="radiogroup" aria-labelledby="clock-lbl" style="margin-top:6px">
               <input type="radio" name="mins" id="m30" value="30" checked><label for="m30">30 min</label>
-              <input type="radio" name="mins" id="m45" value="45"><label for="m45">45 min</label>
               <input type="radio" name="mins" id="m0" value="0"><label for="m0">No clock (study mode)</label>
             </div>
           </div>
@@ -886,7 +885,7 @@ const ROOMS = [
       ["Blood glucose dropping. Last meal was 6 hours ago.", "hunger", 18],
       ["10:30 PM. The room is dark. The body clock says: night.", "sleep", 75],
       ["\"Pop quiz, everyone!\" The amygdala just sent a danger signal.", "stress", 88]
-    ]);
+    ]).slice(0, 4);
     c.innerHTML = `
       <h3>Homeostasis control tower</h3>
       <div class="alertcard"><div class="thermo" id="hy-th"><i></i></div><div><span class="tag" id="hy-tag"></span><p id="hy-q" aria-live="polite"></p></div></div>
@@ -921,17 +920,17 @@ const ROOMS = [
     <p>A little <span class="term">stress</span> can help you focus. Too much, and the alarm gets so loud that your frontal lobe, the thinking part, has trouble doing its job. That's why your mind can go blank during a test even when you studied.</p>
     <h4>Mindfulness</h4>
     <p><span class="term">Mindfulness</span> means paying attention to the present moment on purpose, without judging it. Slow breathing, especially a long, slow breath out, switches on your body's calming system and helps quiet the alarm. People who practice mindfulness regularly often react less strongly to stress.</p>
-    <div class="mission"><b>Mission</b>Take three slow breaths. Hold the button while you breathe in for about 4 seconds. Let go and breathe out for about 4 seconds.</div>`,
-  hints: ["Press and hold the button while you breathe in. Let go while you breathe out.", "Go slowly. Count 1-2-3-4 while holding, then 1-2-3-4 after you let go.", "Three slow breaths in a row turn off the alarm. On a keyboard, hold the Space bar."],
+    <div class="mission"><b>Mission</b>Take two slow breaths. Hold the button while you breathe in for about 4 seconds. Let go and breathe out for about 4 seconds.</div>`,
+  hints: ["Press and hold the button while you breathe in. Let go while you breathe out.", "Go slowly. Count 1-2-3-4 while holding, then 1-2-3-4 after you let go.", "Two slow breaths in a row turn off the alarm. On a keyboard, hold the Space bar."],
   fact: "Slow breathing is a remote control for your nervous system. A long breath out helps switch off the stress alarm.",
-  answer: "Hold the breathe button ~4 s (3–8 s counts), release and wait ~4 s. Repeat 3 times.",
+  answer: "Hold the breathe button ~4 s (3–8 s counts), release and wait ~4 s. Repeat 2 times.",
   build(c, solve) {
     c.innerHTML = `
       <h3>Stress alarm override</h3>
       <div class="stressbar" style="margin-top:10px"><span>STRESS</span><div class="bar"><i id="am-bar"></i></div><b id="am-pct">100%</b></div>
       <div class="breathe-stage"><div class="guide-ring"></div><div class="lung" id="am-lung"></div></div><p class="cue" id="am-cue">Ready<small>Press and hold to breathe in</small></p>
       <button class="breathe-btn" id="am-btn">Hold to breathe in</button>
-      <div class="cycles" id="am-cy"><i></i><i></i><i></i></div>
+      <div class="cycles" id="am-cy"><i></i><i></i></div>
       <p class="feedback" id="am-fb" aria-live="polite" style="text-align:center"></p>`;
     const wrap = c.closest(".console"), btn = $("#am-btn", c), lung = $("#am-lung", c), cue = $("#am-cue", c), fb = $("#am-fb", c);
     let phase = "ready", t0 = 0, count = 0, stress = 100, exT = null, done = false, raf;
@@ -961,10 +960,10 @@ const ROOMS = [
       phase = "out"; t0 = performance.now();
       exT = setTimeout(() => {
         if (phase !== "out") return;
-        phase = "ready"; count++; Sound.chime(); fb.className = "feedback good"; fb.textContent = count < 3 ? "Nice and slow. The alarm is quieting down." : "";
-        $$("#am-cy i", c)[count - 1].classList.add("on"); setStress(Math.max(0, 100 - count * 34));
-        setCue(count < 3 ? "Good breath" : "Calm", count < 3 ? "Press and hold for the next one" : "The alarm is off");
-        if (count >= 3) { done = true; btn.disabled = true; btn.textContent = "Alarm off"; fb.className = "feedback good"; fb.textContent = "Stress 0%. The frontal lobe can think again."; setTimeout(solve, 1800); }
+        phase = "ready"; count++; Sound.chime(); fb.className = "feedback good"; fb.textContent = count < 2 ? "Nice and slow. The alarm is quieting down." : "";
+        $$("#am-cy i", c)[count - 1].classList.add("on"); setStress(Math.max(0, 100 - count * 50));
+        setCue(count < 2 ? "Good breath" : "Calm", count < 2 ? "Press and hold for the next one" : "The alarm is off");
+        if (count >= 2) { done = true; btn.disabled = true; btn.textContent = "Alarm off"; fb.className = "feedback good"; fb.textContent = "Stress 0%. The frontal lobe can think again."; setTimeout(solve, 1800); }
       }, 3500);
     };
     btn.addEventListener("pointerdown", e => { e.preventDefault(); btn.setPointerCapture?.(e.pointerId); press(); });
@@ -992,28 +991,28 @@ const ROOMS = [
       <dt>Water</dt><dd>A hydrated, well-fed brain remembers better.</dd>
       <dt>Calm</dt><dd>Stress that lasts a long time floods the brain with cortisol, which can harm the hippocampus and make remembering harder.</dd>
     </dl>
-    <div class="mission"><b>Mission</b>Watch the memory pattern, then repeat it. Survive three rounds to lock the memories in.</div>`,
+    <div class="mission"><b>Mission</b>Watch the memory pattern, then repeat it. Survive two rounds to lock the memories in.</div>`,
   hints: ["Watch the whole pattern before you click. Saying the words out loud helps.", "Chunk it: group the pattern into pairs, like a phone number.", "If you miss, the same pattern replays. You never lose progress."],
   fact: "London taxi drivers who memorized thousands of streets had a larger back part of the hippocampus. Practice changes your brain.",
-  answer: "Simon-style memory game: repeat the lit-up sequence for rounds of 3, 4 and 5. The sequence is random each time.",
+  answer: "Simon-style memory game: repeat the lit-up sequence for rounds of 3 and 4. The sequence is random each time.",
   build(c, solve) {
     const O = [["Sleep", "#c792ff", `<path d="M20 4a14 14 0 1 0 14 18A11 11 0 0 1 20 4z"/>`], ["Practice", "#4fe3ff", `<path d="M6 8h22l6 6v20H6z"/><path d="M11 18h14M11 24h14M11 30h8"/>`], ["Water", "#57efa2", `<path d="M20 4c7 9 11 15 11 21a11 11 0 0 1-22 0c0-6 4-12 11-21z"/>`], ["Calm", "#ffb547", `<circle cx="20" cy="20" r="6"/><circle cx="20" cy="20" r="13"/>`]];
     c.innerHTML = `
       <h3>Memory consolidation</h3>
       <div class="orbs" id="hp-o">${O.map((o, i) => `<button class="orb" data-i="${i}" style="--c:${o[1]}" disabled><svg viewBox="0 0 40 40" aria-hidden="true">${o[2]}</svg>${o[0]}</button>`).join("")}</div>
-      <p class="mem-status" id="hp-s">Round 0 of 3</p>
+      <p class="mem-status" id="hp-s">Round 0 of 2</p>
       <div class="row" style="justify-content:center;margin-top:12px"><button class="btn primary" id="hp-go">Start memory scan</button></div>
       <p class="feedback" id="hp-fb" aria-live="polite" style="text-align:center"></p>`;
     const seq = Array.from({ length: 5 }, () => Math.floor(Math.random() * 4));
-    const lens = [3, 4, 5]; let round = 0, pos = 0, listening = false, timers = [];
+    const lens = [3, 4]; let round = 0, pos = 0, listening = false, timers = [];
     const orbs = $$(".orb", c), fb = $("#hp-fb", c), st = $("#hp-s", c), go = $("#hp-go", c);
     const flash = (i, ms = 420) => { orbs[i].classList.add("lit"); Sound.orb(i); timers.push(setTimeout(() => orbs[i].classList.remove("lit"), ms)); };
     const play = () => {
       listening = false; orbs.forEach(o => o.disabled = true); go.disabled = true; pos = 0;
-      st.textContent = `Round ${round + 1} of 3 · watch`;
+      st.textContent = `Round ${round + 1} of 2 · watch`;
       const n = lens[round];
       for (let k = 0; k < n; k++) timers.push(setTimeout(() => flash(seq[k]), 700 + k * 720));
-      timers.push(setTimeout(() => { listening = true; orbs.forEach(o => o.disabled = false); st.textContent = `Round ${round + 1} of 3 · your turn`; orbs[0].focus({ preventScroll: true }); }, 700 + n * 720));
+      timers.push(setTimeout(() => { listening = true; orbs.forEach(o => o.disabled = false); st.textContent = `Round ${round + 1} of 2 · your turn`; orbs[0].focus({ preventScroll: true }); }, 700 + n * 720));
     };
     go.onclick = () => { fb.textContent = ""; play(); };
     $("#hp-o", c).onclick = e => {
@@ -1026,7 +1025,7 @@ const ROOMS = [
       pos++;
       if (pos === lens[round]) {
         listening = false; round++; fb.className = "feedback good"; orbs.forEach(o => o.disabled = true);
-        if (round === 3) { st.textContent = "Round 3 of 3 · stored"; fb.textContent = "Memories saved to long-term storage."; orbs.forEach(o => o.disabled = true); timers.push(setTimeout(() => { Sound.good(); solve(); }, 900)); }
+        if (round === 2) { st.textContent = "Round 2 of 2 · stored"; fb.textContent = "Memories saved to long-term storage."; orbs.forEach(o => o.disabled = true); timers.push(setTimeout(() => { Sound.good(); solve(); }, 900)); }
         else { fb.textContent = "Stored. Next pattern is longer."; timers.push(setTimeout(play, 1400)); }
       }
     };
@@ -1165,7 +1164,7 @@ const ROOMS = [
       <dt>GABA</dt><dd><b>The brain's brakes.</b> Tells neurons to slow down and fire less, which helps you feel calm and fall asleep. Its partner, glutamate, is the gas pedal.</dd>
     </dl>
     <p>Sleep, exercise, sunlight and good food all help keep these messengers balanced.</p>
-    <div class="mission"><b>Mission</b>Read each situation and release the neurotransmitter that fits. Six correct messages restart the conversation.</div>`,
+    <div class="mission"><b>Mission</b>Read each situation and release the neurotransmitter that fits. Four correct messages restart the conversation.</div>`,
   hints: ["Look for the key idea: reward and motivation, mood and sleep, or calming down.", "Dopamine = \"do it again.\" Serotonin = steady mood. GABA = brakes.", "Goals and rewards → Dopamine. Mood, sleep, gut → Serotonin. Calming and slowing neurons → GABA."],
   fact: "A synapse is about 20 nanometers wide. Thousands of them would fit across the width of a human hair.",
   answer: "Rewards/goals/motivation/movement → Dopamine; mood/sleep/appetite/gut → Serotonin; calming/slowing/brakes → GABA.",
@@ -1178,7 +1177,7 @@ const ROOMS = [
       ["This messenger is mostly made in the gut and helps control appetite.", "serotonin"],
       ["Maya's racing thoughts slow down so she can finally fall asleep.", "gaba"],
       ["The brakes: this messenger tells overexcited neurons to fire less.", "gaba"]
-    ]);
+    ]).slice(0, 4);
     c.innerHTML = `
       <h3>Synapse transmission</h3>
       <div class="syn-wrap">
@@ -1278,10 +1277,10 @@ const ROOMS = [
 ];
 const DOORS = {
   brainstem: { page: 2, title: "Autopilot Check", code: "PONS", hints: ["Circle only the jobs your body does without you deciding to do them. The field notes list them.", "Breathing, heartbeat, swallowing and sneezing are automatic. Their letters spell a part of the brainstem: PONS."] },
-  thalamus: { page: 2, title: "Relay Map", code: "RUDL", arrows: true, hints: ["Draw each sense's line through the thalamus to the lobe that handles it. Smell never goes through the thalamus, so it adds no arrow.", "Sight goes right, touch goes up, sound goes down, movement goes left: → ↑ ↓ ←."] },
+  thalamus: { page: 2, title: "Relay Match", code: "RELAY", hints: ["Draw a line from each sense to the part of the brain that handles it. The field notes list them under 'Where signals go'.", "Sight→Occipital R, Sound→Temporal E, Touch→Parietal L, Taste→Insula A, Movement→Frontal Y: RELAY."] },
   hypothalamus: { page: 3, title: "Control Tower", code: "FOCUS", hints: ["Draw a line from each alert to the response that brings the body back to normal. Read the letters in alert order.", "Hunger F, Shiver O, Sweat C, Thirst U, Sleepiness S: FOCUS."] },
   amygdala: { page: 3, title: "Alarm Words", code: "CALM", hints: ["Every answer is in the amygdala's field notes on the left. Write one letter per box.", "CORTISOL, AMYGDALA, SLOW, MINDFULNESS. The shaded boxes spell CALM."] },
-  hippocampus: { page: 4, title: "Memory Vault", code: "3816", hints: ["Split the job. Each teammate memorizes one or two numbers. Say them out loud.", "Moon (sleep) 3, quiz (practice) 8, drop (water) 1, circles (calm) 6: 3816."] },
+  hippocampus: { page: 4, title: "Memory Vault", code: "3816", hints: ["Split the job. Each teammate memorizes one number. Say them out loud.", "Moon (sleep) 3, quiz (practice) 8, drop (water) 1, circles (calm) 6: 3816."] },
   temporal: { page: 5, title: "Lobe Map", code: "72597", hints: ["Match each job to the lobe that does it. The field notes list all four lobes.", "Temporal 7, Occipital 2, Parietal 5, Frontal 9, Temporal 7: 72597."] },
   limbic: { page: 5, title: "Team Roster", code: "587", hints: ["Only four of the eight structures are on the limbic team. They're listed in the field notes.", "Amygdala 128 + Hippocampus 205 + Hypothalamus 74 + Cingulate gyrus 180 = 587."] },
   synapse: { page: 6, title: "Message Decoder", code: "VESICLE", hints: ["Pick the messenger for each situation, then find that card's letter under the messenger's column.", "Dopamine, Serotonin, GABA, Serotonin, Dopamine, Dopamine, GABA spells VESICLE."] }
@@ -1506,7 +1505,7 @@ function journal() {
 function gmGuide() {
   modal(`<h2 id="modal-title">Game Master guide</h2>
     <p style="color:var(--muted);margin-top:6px">For the person running the escape room. Keep this screen away from players.</p>
-    <p style="margin-top:12px"><b>Door codes (printed Case File mode):</b> Brainstem <b class="mono">PONS</b> · Thalamus <b class="mono">→ ↑ ↓ ←</b> · Hypothalamus <b class="mono">FOCUS</b> · Amygdala <b class="mono">CALM</b> · Hippocampus <b class="mono">3816</b> · Temporal <b class="mono">72597</b> · Limbic <b class="mono">587</b> · Synapse <b class="mono">VESICLE</b>.</p>
+    <p style="margin-top:12px"><b>Door codes (printed Case File mode):</b> Brainstem <b class="mono">PONS</b> · Thalamus <b class="mono">RELAY</b> · Hypothalamus <b class="mono">FOCUS</b> · Amygdala <b class="mono">CALM</b> · Hippocampus <b class="mono">3816</b> · Temporal <b class="mono">72597</b> · Limbic <b class="mono">587</b> · Synapse <b class="mono">VESICLE</b>.</p>
     <p style="margin-top:12px"><b>Flow:</b> Brainstem first → the 7 inner rooms in any order → Frontal lobe exit. Each inner room gives one letter; together they spell <b class="mono">LEARNING</b>.</p>
     <div class="gm-scroll"><table class="gm-table"><thead><tr><th>Room</th><th>Letter</th><th>Solution</th>${S.gm && S.started ? "<th></th>" : ""}</tr></thead><tbody>
     ${ROOMS.map(r => `<tr><th>${r.name}</th><td class="mono">${r.letter || "—"}</td><td>${r.answer}</td>${S.gm && S.started ? `<td><button class="btn small" data-act="gm-skip" data-room="${r.id}" ${S.solved[r.id] || access(r) === "locked" ? "disabled" : ""}>Skip</button></td>` : ""}</tr>`).join("")}

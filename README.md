@@ -12,20 +12,21 @@ It's half paper, half screen:
 
 1. Print `Neuro-Lockdown-Case-File.pdf`, one copy per team. No cutting.
 2. Open `index.html` on each team's laptop or Chromebook and choose **With the printed Case File**.
-3. Hand out pencils. Keep `Neuro-Lockdown-Answer-Key.pdf` for yourself.
+3. Hand out pencils. The game runs on a 30-minute clock. Tell teams to split up: some solve paper pages while others play on screen.
+4.  Keep `Neuro-Lockdown-Answer-Key.pdf` for yourself.
 
 ## Rooms
 
 | Room | Case File page (paper) | Door code | Screen puzzle |
 |---|---|---|---|
 | Brainstem | 2 · circle the automatic jobs | `PONS` | Restore oxygen, water and glucose |
-| Thalamus | 2 · draw sense lines through the thalamus | `→ ↑ ↓ ←` | Wire the sensory switchboard |
-| Hypothalamus | 3 · match alerts to body responses | `FOCUS` | Fix six body alerts |
-| Amygdala | 3 · fill-in word boxes | `CALM` | Calm the stress alarm with slow breathing |
-| Hippocampus | 4 · memory vault (fold the page, 20-second peeks) | `3816` | Repeat memory patterns |
+| Thalamus | 2 · match each sense to its lobe | `RELAY` | Wire the sensory switchboard |
+| Hypothalamus | 3 · match alerts to body responses | `FOCUS` | Fix four body alerts |
+| Amygdala | 3 · fill-in word boxes | `CALM` | Calm the stress alarm with two slow breaths |
+| Hippocampus | 4 · memory vault (fold the page, one teammate peeks for 20 seconds) | `3816` | Repeat memory patterns |
 | Temporal lobes | 5 · match jobs to lobes on a map | `72597` | Tune a radio, password `WERNICKE` |
 | Limbic system | 5 · circle the 4 members and add | `587` | Pick the limbic team |
-| Neurotransmitters | 6 · dopamine / serotonin / GABA decoder | `VESICLE` | Fire messengers across a synapse |
+| Neurotransmitters | 6 · dopamine / serotonin / GABA decoder | `VESICLE` | Fire four messengers across a synapse |
 | Frontal lobe | (none) | — | Unscramble **LEARNING** |
 
 All 12 primary terms and all 6 supporting terms (water, stress, mindfulness, memory, oxygen, glucose) are taught in the on-screen field notes and used in the puzzles.

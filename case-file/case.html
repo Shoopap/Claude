@@ -89,13 +89,13 @@ ol.steps{margin:0;padding-left:1.2em;display:grid;gap:6px;font-size:11.5pt}
   <div class="card" style="padding:.16in .2in">
     <h3 style="font-size:14pt;margin-bottom:8px">How to play</h3>
     <ol class="steps">
-      <li>Start the game on the laptop and choose <b>With the printed Case File</b>.</li>
+      <li>Start the game on the laptop and choose <b>With the printed Case File</b>. You have 30 minutes.</li>
       <li>Click a room on the brain map. Its sealed door tells you which <b>page</b> of this Case File to solve.</li>
       <li>Read the room's <b>field notes</b> on the screen. Use them to solve the page with a pencil.</li>
       <li>Type the code into the door. Then beat the puzzle on screen to win <b>one letter</b>.</li>
       <li>Collect all 8 letters, then unscramble them in the <b>frontal lobe</b> to escape.</li>
     </ol>
-    <p style="margin-top:8px;color:var(--muted)">Start with the <b>Brainstem</b>. Nothing else opens until life support is back online. After that, split up: some teammates work on paper while others play on screen.</p>
+    <p style="margin-top:8px;color:var(--muted)">Start with the <b>Brainstem</b>. Nothing else opens until life support is back online. <b>Split up to save time:</b> the paper team can solve every page right away, while the screen team plays.</p>
   </div>
   <div class="two">
     <div class="card"><h3 style="font-size:11pt">Team name</h3><div style="border-bottom:1.5px solid var(--ink);height:.35in"></div><h3 style="font-size:11pt;margin-top:10px">Team members</h3><div style="border-bottom:1.5px solid var(--ink);height:.35in"></div><div style="border-bottom:1.5px solid var(--ink);height:.35in"></div></div>
@@ -117,23 +117,28 @@ ol.steps{margin:0;padding-left:1.2em;display:grid;gap:6px;font-size:11.5pt}
     </table>
     <div class="codeline"><span class="lbl">Door code</span><div class="boxes"><span class="bx"></span><span class="bx"></span><span class="bx"></span><span class="bx"></span></div><span style="font-weight:400;font-size:9pt;color:var(--muted);margin-left:8px">Hint: it's a real part of the brainstem!</span></div>
   </div>
-  <div class="pz" style="flex:1.6">
-    <div class="phead"><span class="room">Thalamus</span><h2>Relay Map</h2><span class="door">DOOR CODE<br>arrows</span></div>
-    <p class="how">Draw a line from each sense <b>into the thalamus</b>, then <b>out to the lobe</b> that handles it. Write the direction each line leaves the thalamus (→ ↑ ↓ ←). A sense that never goes through the thalamus gets <b>no arrow</b>.</p>
-    <div class="map">
-      <div class="dest" style="left:50%;top:.1in;transform:translateX(-50%)">Parietal lobe<small>top</small></div>
-      <div class="dest" style="left:.12in;top:32%">Frontal lobe<small>front</small></div>
-      <div class="dest" style="right:.12in;top:32%">Occipital lobe<small>back</small></div>
-      <div class="dest" style="left:50%;top:60%;transform:translateX(-50%)">Temporal lobe<small>side, by the ears</small></div>
-      <div class="dest" style="left:.12in;top:62%;border-style:dashed">Olfactory bulb<small>smell center</small></div>
-      <div class="thal">THALAMUS</div>
-      <div class="sense" style="left:.12in"><b>1</b>Sight</div>
-      <div class="sense" style="left:1.37in"><b>2</b>Touch</div>
-      <div class="sense" style="left:2.62in"><b>3</b>Smell</div>
-      <div class="sense" style="left:3.87in"><b>4</b>Sound</div>
-      <div class="sense" style="left:5.12in"><b>5</b>Movement</div>
+  <div class="pz">
+    <div class="phead"><span class="room">Thalamus</span><h2>Relay Match</h2><span class="door">DOOR CODE<br>5 letters</span></div>
+    <p class="how">The thalamus is a relay station. It sends each sense to the part of the brain that handles it. <b>Draw a line</b> from each sense to the right part. Write the letters in sense order.</p>
+    <div style="display:grid;grid-template-columns:1fr .5fr 1.2fr;align-items:center">
+      <div style="display:grid;gap:8px">
+        <div class="card">1. <b>Sight</b> <small style="color:var(--muted)">from the eyes</small><span class="dot" style="float:right;margin-top:4px"></span></div>
+        <div class="card">2. <b>Sound</b> <small style="color:var(--muted)">from the ears</small><span class="dot" style="float:right;margin-top:4px"></span></div>
+        <div class="card">3. <b>Touch</b> <small style="color:var(--muted)">from the skin</small><span class="dot" style="float:right;margin-top:4px"></span></div>
+        <div class="card">4. <b>Taste</b> <small style="color:var(--muted)">from the tongue</small><span class="dot" style="float:right;margin-top:4px"></span></div>
+        <div class="card">5. <b>Movement</b> <small style="color:var(--muted)">plans to move</small><span class="dot" style="float:right;margin-top:4px"></span></div>
+      </div>
+      <div></div>
+      <div style="display:grid;gap:8px">
+        <div class="card"><span class="dot"></span> <b>Parietal lobe</b> <small style="color:var(--muted)">top</small><span class="let" style="float:right">L</span></div>
+        <div class="card"><span class="dot"></span> <b>Frontal lobe</b> <small style="color:var(--muted)">front</small><span class="let" style="float:right">Y</span></div>
+        <div class="card"><span class="dot"></span> <b>Occipital lobe</b> <small style="color:var(--muted)">back</small><span class="let" style="float:right">R</span></div>
+        <div class="card"><span class="dot"></span> <b>Insula</b> <small style="color:var(--muted)">deep fold</small><span class="let" style="float:right">A</span></div>
+        <div class="card"><span class="dot"></span> <b>Temporal lobe</b> <small style="color:var(--muted)">by the ears</small><span class="let" style="float:right">E</span></div>
+      </div>
     </div>
-    <div class="codeline"><span class="lbl">Door code</span><span style="font-weight:400;font-size:10pt">Sense 1</span><span class="bx"></span><span style="font-weight:400;font-size:10pt">2</span><span class="bx"></span><span style="font-weight:400;font-size:10pt">3</span><span class="bx"></span><span style="font-weight:400;font-size:10pt">4</span><span class="bx"></span><span style="font-weight:400;font-size:10pt">5</span><span class="bx"></span></div>
+    <p style="font-size:9.5pt;color:var(--muted)">Fun fact: smell is the only sense that skips the thalamus. That's why smells bring back memories so fast.</p>
+    <div class="codeline"><span class="lbl">Door code</span><div class="boxes"><span class="bx"></span><span class="bx"></span><span class="bx"></span><span class="bx"></span><span class="bx"></span></div></div>
   </div>
   <div class="foot"><span>NEURO LOCKDOWN · CASE FILE</span><span>PAGE 2</span></div>
 </section>
@@ -180,13 +185,13 @@ ol.steps{margin:0;padding-left:1.2em;display:grid;gap:6px;font-size:11.5pt}
 <!-- PAGE 4 -->
 <section class="page">
   <div class="phead"><span class="room">Hippocampus</span><h2>Memory Vault</h2><span class="door">DOOR CODE<br>4 numbers</span></div>
-  <p class="eyebrow" style="text-align:center">The vault · only the Memory Keeper may look</p>
+  <p class="eyebrow" style="text-align:center">The vault · one teammate looks at a time</p>
   <div class="vault" id="vault"></div>
   <div class="fold">✂ ─ ─ FOLD THE TOP HALF BACK ALONG THIS LINE BEFORE YOU START ─ ─</div>
-  <p class="how" style="font-size:11pt"><b>Vault rules.</b> Fold the top half of this page back so nobody can see it. Pick a <b>Memory Keeper</b>. The keeper unfolds the vault, looks for <b>20 seconds</b>, then folds it closed again. No writing while it's open! The keeper then tells the team what they remember. Want another look? Switch keepers, but first the new keeper has to say one brain fact out loud.</p>
+  <p class="how" style="font-size:12pt"><b>How it works:</b> Fold the top half of this page back. One teammate looks at it for 20 seconds, then folds it closed and tells the team what they remember. No writing while it's open. Need another look? Let a different teammate peek.</p>
   <div class="card" style="padding:.14in .18in">
     <h3 style="font-size:12pt">Which numbers were next to the four memory boosters?</h3>
-    <p style="font-size:10pt;color:var(--muted);margin-top:2px">The boosters are listed in the hippocampus field notes on screen. Keep them in that order.</p>
+    
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.2in;margin-top:12px;text-align:center">
       <div><b style="font-family:var(--f-display)">1. Sleep</b><div class="bx" style="margin:6px auto 0"></div></div>
       <div><b style="font-family:var(--f-display)">2. Practice</b><div class="bx" style="margin:6px auto 0"></div></div>
